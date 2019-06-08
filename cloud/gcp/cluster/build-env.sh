@@ -20,11 +20,11 @@
 function environment-variables {
     echo "** Parsing environment variables from json file **";
     ENVIRONMENT=$(cat ../gcp.json | jq '.environment');
-    DOCKER_USER=$(cat ../shared/authorization/docker-login.json | jq -r '.username');
-    DOCKER_PASS=$(cat ../shared/authorization/docker-login.json | jq -r '.password');
-    DOCKER_EMAIL=$(cat ../shared/authorization/docker-login.json | jq -r '.email');
-    DOCKER_REPO=$(cat ../shared/authorization/docker-login.json | jq -r '.repo');
-    SECRET_NAME=$(cat ..gcp.json | jq -r '.applications.secretname')
+    DOCKER_USER=$(cat ../../shared/authorization/docker-login.json | jq -r '.username');
+    DOCKER_PASS=$(cat ../../shared/authorization/docker-login.json | jq -r '.password');
+    DOCKER_EMAIL=$(cat ../../shared/authorization/docker-login.json | jq -r '.email');
+    DOCKER_REPO=$(cat ../../shared/authorization/docker-login.json | jq -r '.repo');
+    SECRET_NAME=$(cat ../gcp.json | jq -r '.application.secretname');
     PROJECT_NAME=$(echo "$ENVIRONMENT" | jq -r '.projectname');
     CLUSTER_NAME=$(echo "$ENVIRONMENT" | jq -r '.clustername');
     ZONE_NAME=$(echo "$ENVIRONMENT" | jq -r '.zone');
@@ -55,8 +55,8 @@ function login {
 # Set project
 function set-project {
     echo "** Setting project and compute zone **"
-    gcloud config set project $PROJECT_NAME
-    gcloud config set compute/zone $ZONE_NAME
+    gcloud config set project $PROJECT_NAME --quiet
+    gcloud config set compute/zone $ZONE_NAME --quiet
 }
 
 function create-network {
@@ -145,13 +145,7 @@ function create-static-ip {
 
     # Retrieve static ip so it can be exported
     echo "** Exporting Static IP so it can be used for Ingress install **"
-    gcloud compute addresses describe $SUBNET_NAME --region=$REGION | awk '{print $2}' > address.txt
-
-    # Export static ip
-    STATIC_IP=$(cat address.txt)
-
-    # Remove static ip file
-    rm -rf address.txt
+    STATIC_IP=$(gcloud compute addresses describe $SUBNET_NAME --region=$REGION | awk 'FNR==1{print $2}')
 }
 
 # Install Cerfificate Manager
@@ -196,7 +190,7 @@ function create-secret {
     kubectl create secret docker-registry $SECRET_NAME \
     --docker-server=$DOCKER_REPO \
     --docker-username=$DOCKER_USER \
-    --docker-password=$DOCKER_PASSWORD \
+    --docker-password=$DOCKER_PASS \
     --docker-email=$DOCKER_EMAIL
 }
 

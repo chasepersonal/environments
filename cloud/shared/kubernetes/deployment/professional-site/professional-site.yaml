@@ -1,25 +1,5 @@
 # Deployment, service, and ingress definitions for career site
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: pro
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      role: pro
-  template:
-    metadata:
-      labels:
-        role: pro
-    spec:
-      containers:
-      - image: repo/imagename
-        imagePullPolicy: IfNotPresent
-        name: pro
 
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -29,7 +9,7 @@ spec:
     - name: http
       port: 80
   selector:
-    role: pro
+    role: 
 
 ---
 apiVersion: extensions/v1beta1
@@ -41,14 +21,36 @@ metadata:
     kubernetes.io/tls-acme: 'true'
 spec:
   rules:
-    - host: pro.domain.com
+    - host:
       http:
         paths:
         - path: /
           backend:
-            serviceName: pro
+            serviceName: 
             servicePort: 80
   tls:
     - hosts:
-        - "pro.domain.com"
-      secretName: pro.domain.com
+        - 
+      secretName: 
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: 
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      role: 
+  template:
+    metadata:
+      labels:
+        role: 
+    spec:
+      containers:
+      - image: 
+        imagePullPolicy: IfNotPresent
+        name: 
+      imagePullSecrets:
+      - name: 
