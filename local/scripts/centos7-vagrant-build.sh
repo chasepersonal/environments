@@ -22,10 +22,12 @@ export ENVIRONMENT=centos
 echo "** Allow install scripts to be executable **"
 sudo chmod u+x /home/vagrant/scripts/provision-environments.sh
 sudo chmod u+x /home/vagrant/scripts/install-kde-centos.sh
+sudo chmod u+x /home/vagrant/scripts/install-virtualbox-guest-additions-centos-7.sh
 
 echo "** Run Provisioning scripts **"
 . /home/vagrant/scripts/provision-environments.sh -e centos
 . /home/vagrant/scripts/install-kde-centos.sh
+. /home/vagrant/scripts/install-virtualbox-guest-additions-centos-7.sh
 
 echo "** Allow User to Access Docker without sudo **"
 sudo usermod -aG docker vagrant

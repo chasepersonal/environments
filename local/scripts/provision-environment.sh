@@ -35,7 +35,7 @@ function environment-preparation {
         sudo apt-get upgrade -y
     elif [[ "$ENVIRONMENT" == 'centos' ]]
     then
-        echo "** Updating Yum Repo and Ugrade Programs"
+        echo "** Updating Yum Repo and Ugrade Programs **"
         sudo yum update -y
     fi
 }
@@ -77,7 +77,23 @@ function install-google-chrome {
         sudo yum localinstall google-chrome-stable_current_x86_64.rpm -y
 
         echo "** Remove Google Chrome Binary**"
-        rm -rf google-chrome-stable_current_x86_64.rpm
+        rm -rf ~/google-chrome-stable_current_x86_64.rpm
+    fi
+}
+
+function install-git {
+    if [[ "$ENVIRONMENT" == 'ubuntu' ]]
+    then
+        # Update the local repos before downloading
+        echo "** Installing Git **"
+        sudo apt-get update
+
+        sudo apt-get install gcc git -y
+
+    elif [[ "$ENVIRONMENT" == 'centos' ]]
+    then
+        echo "** Installing Git **"
+        sudo yum install gcc git -y
     fi
 }
 
@@ -168,5 +184,6 @@ set -e
 
 environment-preparation
 install-google-chrome
+install-git
 install-vs-code
 install-docker
