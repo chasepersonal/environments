@@ -136,6 +136,9 @@ function install-helm {
     echo "** Installing Tiller and Initialize Helm for the cluster"
     helm init --service-account tiller --upgrade
 
+    # Wait 60 seconds so Tiller can become ready
+    echo "** Waiting 60 seconds so Tiller pod can become ready"
+    sleep 60
 }
 
 function create-static-ip {
@@ -153,16 +156,12 @@ function install-cm {
 
     # Get newer manifests for cert-manager
     # This will ensure that "ClusterIssuer" is granted to the Cert Manager API
-    echo "** Downloading most recent manifests for cert-manager"
+    echo "** Downloading most recent manifests for cert-manager **"
     kubectl apply \
         -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.7/deploy/manifests/00-crds.yaml
 
-    # Wait 60 seconds so Tiller can become ready
-    echo "** Waiting 60 seconds so Tiller pod can become ready"
-    sleep 60
-
     # Install cert-manager
-    echo "** Installing cert-manager **"
+    echo "** Installing Cert Manager **"
     helm install --name cm \
     --namespace kube-system \
     --set createCustomResource=false \
