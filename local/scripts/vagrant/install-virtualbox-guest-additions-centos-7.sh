@@ -19,10 +19,6 @@ function install-prereqs {
     sudo yum groupinstall "Development Tools" -y
     sudo yum install perl gcc dkms kernel-devel kernel-headers make bzip2 -y
 
-    # Sync distros in case they are out of sync
-    echo "** Sync yum distro in case some packages are out of sync **"
-    sudo yum distro sync -y
-
     echo "** Export Kernel Version for Install **"
     export KERN_DIR=/usr/src/kernels/$(uname -r)
 }

@@ -74,17 +74,14 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  config.vm.provision "file", source: "../scripts/provision-environment.sh", destination: "~/scripts/provision-environments.sh"
-  config.vm.provision "file", source: "../scripts/install-kde-centos.sh", destination: "~/scripts/install-kde-centos.sh"
-  config.vm.provision "file", source: "../scripts/centos7-vagrant-build.sh", destination: "~/scripts/centos7-vagrant-build.sh"
-  config.vm.provision "file", source: "../scripts/install-virtualbox-guest-additions-centos-7.sh", destination: "~/scripts/install-virtualbox-guest-additions-centos-7.sh"
+  config.vm.provision "file", source: "../scripts/vagrant/provision-environment.sh", destination: "~/scripts/provision-environments.sh"
+  config.vm.provision "file", source: "../scripts/vagrant/install-kde-centos.sh", destination: "~/scripts/install-kde-centos.sh"
+  config.vm.provision "file", source: "../scripts/vagrant/centos7-vagrant-build.sh", destination: "~/scripts/centos7-vagrant-build.sh"
+  config.vm.provision "file", source: "../scripts/vagrant/install-virtualbox-guest-additions-centos-7.sh", destination: "~/scripts/install-virtualbox-guest-additions-centos-7.sh"
   config.vm.provision "shell", inline: <<-SHELL
 
     echo "** Remove carriage returns from shell scripts **"
-    sed -i 's/\r$//g' /home/vagrant/scripts/provision-environments.sh
-    sed -i 's/\r$//g' /home/vagrant/scripts/install-kde-centos.sh
-    sed -i 's/\r$//g' /home/vagrant/scripts/centos7-vagrant-build.sh
-    sed -i 's/\r$//g' /home/vagrant/scripts/install-virtualbox-guest-additions-centos-7.sh
+    sed -i 's/\r$//g' /home/vagrant/scripts/*.sh
 
     echo "** Running main install script **"
     . /home/vagrant/scripts/centos7-vagrant-build.sh
