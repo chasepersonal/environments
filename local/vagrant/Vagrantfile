@@ -76,20 +76,26 @@ Vagrant.configure("2") do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "file", source: "../scripts/vagrant/provision-environment.sh", destination: "~/scripts/provision-environments.sh"
   config.vm.provision "file", source: "../scripts/vagrant/install-kde-centos.sh", destination: "~/scripts/install-kde-centos.sh"
-  config.vm.provision "file", source: "../scripts/vagrant/centos7-vagrant-build.sh", destination: "~/scripts/centos7-vagrant-build.sh"
-  config.vm.provision "file", source: "../scripts/vagrant/install-virtualbox-guest-additions-centos-7.sh", destination: "~/scripts/install-virtualbox-guest-additions-centos-7.sh"
   config.vm.provision "shell", inline: <<-SHELL
 
-    echo "** Remove carriage returns from shell scripts **"
-    sed -i 's/\r$//g' /home/vagrant/scripts/*.sh
+    echo "** Export Centos Environment **"
+    export ENVIRONMENT=centos
+  
+    echo "** Allow install scripts to be executable **"
+    sudo chmod u+x /home/vagrant/scripts/*.sh
 
-    echo "** Running main install script **"
-    . /home/vagrant/scripts/centos7-vagrant-build.sh
-    
-    echo "** Remove scripts folder **"
+    echo "** Remove carriage returns from provisioning shell scripts **"
+    sed -i 's/\r$//g' /home/vagrant/scripts/*.sh
+  
+    echo "** Begin Running Post Install scripts **"
+    . /home/vagrant/scripts/provision-environments.sh
+    . /home/vagrant/scripts/install-kde-centos.sh
+    #. /home/vagrant/scripts/install-virtualbox-guest-additions-centos-7.sh
+
+    echo "** Removing scripts folder **"
     rm -rf /home/vagrant/scripts
-    
-    echo "** Rebooting System **"
-    reboot
   SHELL
+
+  # trigger reload to apply last post install updates
+  config.vm.provision :reload
 end
