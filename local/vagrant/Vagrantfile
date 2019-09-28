@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "centos/7"
+  config.vm.box = "ubuntu/bionic64"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -75,22 +75,20 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "file", source: "../scripts/vagrant/provision-environment.sh", destination: "~/scripts/provision-environments.sh"
-  config.vm.provision "file", source: "../scripts/vagrant/install-kde-centos.sh", destination: "~/scripts/install-kde-centos.sh"
   config.vm.provision "shell", inline: <<-SHELL
 
-    echo "** Export Centos Environment **"
-    export ENVIRONMENT=centos
+    echo "** Export Environment Name for Post Install scripts**"
+    export ENVIRONMENT=$(lsb_release -i | awk '{ print tolower($3) }')
+    echo "** Post Install Scripts will be run for the follwing environment: $ENVIRONMENT"
   
     echo "** Allow install scripts to be executable **"
-    sudo chmod u+x /home/vagrant/scripts/*.sh
+    sudo chmod u+x /home/vagrant/scripts/provision-environments.sh
 
-    echo "** Remove carriage returns from provisioning shell scripts **"
-    sed -i 's/\r$//g' /home/vagrant/scripts/*.sh
+    echo "** Remove carriage returns from provisioning scripts **"
+    sed -i 's/\r$//g' /home/vagrant/scripts/provision-environments.sh
   
-    echo "** Begin Running Post Install scripts **"
+    echo "** Begin Running Post Install script **"
     . /home/vagrant/scripts/provision-environments.sh
-    . /home/vagrant/scripts/install-kde-centos.sh
-    #. /home/vagrant/scripts/install-virtualbox-guest-additions-centos-7.sh
 
     echo "** Removing scripts folder **"
     rm -rf /home/vagrant/scripts
