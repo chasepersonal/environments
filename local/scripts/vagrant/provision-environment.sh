@@ -23,6 +23,15 @@
 # Install VS Code: To install the stable version of VS code 
 # for development purposes.
 ###############################################################
+
+# Provide environment variables needed for custom configuration
+function environment-variables {
+    GIT=$(cat ../../config/vagrant/vagrant.json | jq .'git');
+    USERNAME=$(echo "$GIT" | jq -r '.username');
+    EMAIL=$(echo "$GIT" | jq -r '.email');
+}
+
+# Create a step to control actions of failed commands
 function fail-step {
     # If step fails, provide messsage and abort
     if [ $? -eq 1 ];
@@ -127,6 +136,15 @@ function install-git {
         sudo yum install gcc git -y
         fail-step
     fi
+}
+
+function set-up-git {
+
+    # Set up git configuration with user info from vagrant-config.json
+    git config --global user.email "$EMAIL"
+    fail-step
+    git config --global user.name "$USERNAME"
+    fail-step
 }
 
 function install-vs-code {
