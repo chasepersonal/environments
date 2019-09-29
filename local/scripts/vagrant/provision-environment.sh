@@ -24,6 +24,7 @@
 # for development purposes.
 ###############################################################
 function fail-step {
+    # If step fails, provide messsage and abort
     if [ $? -eq 1 ];
     then
         echo "** Command failed to run **"
@@ -142,6 +143,13 @@ function install-vs-code {
         sudo snap install code --classic
         fail-step
 
+        # Install Docker and Remote: Containers extensions for VS Code
+        echo "** Installing Docker and Remote: Containers extensions for VS Code"
+        code --install-extension ms-azuretools.vscode-docker
+        fail-step
+        code --install-extension ms-vscode-remote.remote-containers
+        fail-step
+
     elif [[ "$ENVIRONMENT" == 'centos' ]]
     then
         echo "** Add VS Code to Yum Repo"
@@ -197,6 +205,11 @@ function install-docker {
         sudo apt-get install docker-ce docker-ce-cli containerd.io -y
         fail-step
 
+        # Add vagrant user to docker group
+        # Will allow vagrant user to use docker without sudo
+        echo "** Adding vagrant user to Docker group **"
+        sudo usermod -aG docker vagrant
+        fail-step
     elif [[ "$ENVIRONMENT" == 'centos' ]]
     then
         # Install dependencies needed for docker to run
