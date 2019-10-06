@@ -1,4 +1,4 @@
 *key.json
 docker-login.json
 .vagrant
-.log
+*.log

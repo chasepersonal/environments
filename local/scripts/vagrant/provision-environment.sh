@@ -23,7 +23,17 @@
 # Install VS Code: To install the stable version of VS code 
 # for development purposes.
 ###############################################################
+
+# Provide environment variables needed for custom configuration
+function environment-variables {
+    GIT=$(cat ../../config/vagrant/vagrant.json | jq .'git');
+    USERNAME=$(echo "$GIT" | jq -r '.username');
+    EMAIL=$(echo "$GIT" | jq -r '.email');
+}
+
+# Create a step to control actions of failed commands
 function fail-step {
+    # If step fails, provide messsage and abort
     if [ $? -eq 1 ];
     then
         echo "** Command failed to run **"
@@ -128,6 +138,15 @@ function install-git {
     fi
 }
 
+function set-up-git {
+
+    # Set up git configuration with user info from vagrant-config.json
+    git config --global user.email "$EMAIL"
+    fail-step
+    git config --global user.name "$USERNAME"
+    fail-step
+}
+
 function install-vs-code {
 
     if [[ "$ENVIRONMENT" == 'ubuntu' ]]
@@ -140,6 +159,13 @@ function install-vs-code {
         # Install the classic build of VS Code
         echo "** Install VS Code through Snap Store **"
         sudo snap install code --classic
+        fail-step
+
+        # Install Docker and Remote: Containers extensions for VS Code
+        echo "** Installing Docker and Remote: Containers extensions for VS Code"
+        code --install-extension ms-azuretools.vscode-docker
+        fail-step
+        code --install-extension ms-vscode-remote.remote-containers
         fail-step
 
     elif [[ "$ENVIRONMENT" == 'centos' ]]
@@ -197,6 +223,11 @@ function install-docker {
         sudo apt-get install docker-ce docker-ce-cli containerd.io -y
         fail-step
 
+        # Add vagrant user to docker group
+        # Will allow vagrant user to use docker without sudo
+        echo "** Adding vagrant user to Docker group **"
+        sudo usermod -aG docker vagrant
+        fail-step
     elif [[ "$ENVIRONMENT" == 'centos' ]]
     then
         # Install dependencies needed for docker to run

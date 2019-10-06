@@ -1,0 +1,29 @@
+{
+    "environment": {
+        "auth": "",
+        "projectname": "",
+        "clustername": "",
+        "clusterversion": "",
+        "imagetype": "",
+        "zone": "",
+        "region": "",
+        "ip": "",
+        "network": "",
+        "networkrange": "",
+        "subnet": "",
+        "pods": "",
+        "podsubnet": "",
+        "services": "",
+        "servicesubnet": "",
+        "disksize": "",
+        "machinetype": "",
+        "minimumnodes": "",
+        "maximumnodes": "",
+        "numnode": ""
+    },
+    "application": {
+        "auth": "",
+        "deployment": "",
+        "secretname": ""
+    }
+}
