@@ -132,10 +132,10 @@
     become: true
 
   - name: Add paths for docker-compose file to the harbor.service
-    lineinfile:
+    replace:
       path: /etc/systemd/system/harbor.service
       regexp: "^<harbor-install-path>"
-      line: "/home/{{ user }}"
+      replace: "/home/{{ user }}"
     become: true
 
   - name: Stop all currently running Harbor services
