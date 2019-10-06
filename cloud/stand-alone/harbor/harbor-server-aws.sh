@@ -54,7 +54,7 @@ function get-public-dns {
 function provision-harbor-server {
 
     echo "** Running Ansible Playbook to provision the Harbor server **"
-    ansible-playbook --ask-vault-pass -i inventory harbor-provision.yml -e@harbor-creds.yml
+    ansible-playbook --ask-vault-pass -i inventory harbor-provision.yml -e@harbor-creds.yml harbor-vars.yml
 }
 
 # Main functions
