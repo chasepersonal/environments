@@ -1,0 +1,146 @@
+- name: Install Docker dependencies
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - apt-transport-https
+    - curl
+    - software-properties-common
+  become: true
+
+- name: Download docker key
+  shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  
+- name: Install Docker
+  apt:
+    name: docker.io
+  become: true
+
+- name: Add current user to the Docker group
+  user:
+    name: "{{ user }}"
+    group: docker
+    append: yes
+    become: true
+  
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+    become: true
+
+- name: Download Docker Compose
+  shell: "curl -s {{ url }} | grep {{ first_grep }} | grep {{ second_grep }} | {{ cut_action }} | wget -qi -"
+  vars:
+    url: https://api.github.com/repos/docker/compose/releases/latest
+    first_grep: browser_download_url
+    second_grep: docker-compose-Linux-x86_64
+    cut_action: cut -d '"' -f 4
+  
+- name: Make Docker Compose file executable
+  file:
+    path: "/home/{{ user }}"
+    mode: "700"
+
+- name: Move Docker Compose executable to the bin
+  shell: mv docker-compose-Linux-x86_64 /usr/local/bin/docker-compose
+  become: true
+
+- name: Download Let's Encrypt Certbot
+  command: wget https://dl.eff.org/certbot-auto
+
+- name: Make certbot file executable
+  file:
+    path: "/home/{{ user }}"
+    mode: "700"
+
+- name: Move certbot file to the bin
+  shell: mv certbot-auto /usr/local/bin
+  become: true
+
+- name: Run certbot to generate Let's Encrypt certificates
+  shell: "certbot-auto certonly --standalone -d {{ domain }} --preferred-challenges http --agree-tos -n -m {{ email }} --keep-until-expiring"
+
+- name: Download Harbor
+  shell: "curl -s {{ repo_url }} | grep -o '{{ regex_locator }}' | wget -qi -"
+  vars:
+    repo_url: https://api.github.com/repos/goharbor/harbor/releases/latest
+    regex_locator: https://storage[a-zA-Z.-]*/[a-zA-Z0-9+-]*/[a-zA-Z0-9.+-]*/[a-zA-Z0-9.+-]*
+
+- name: Extract files from downloaded .tgz
+  unarchive:
+    src: harbor-offline-installer*.tgz
+    dest: "/home/{{ user }}"
+
+- name: Create a backup of the harbor.yml config
+  command: cp harbor.yml harbor-backup.yml
+
+- name: Add hostname to the harbor.yml config
+  lineinfile:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    regexp: "^hostname: reg.mydomain.com"
+    line: "hostname: {{ domain }}"
+
+- name: Add admin password to the harbor.yml config
+  lineinfile:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    regexp: "^harbor_admin_password: Harbor12345"
+    line: "harbor_admin_password: {{ admin_password }}"
+
+- name: Add in database password to the harbor.yml config
+  lineinfile:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    regexp: "^  password: root123"
+    line: "  password: {{ db_password }}"
+
+- name: Add cert to harbor config
+  lineinfile:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    regexp: "^#   certificate: /your/certificate/path"
+    line: "  certificate: /etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+
+- name: Add private key to harbor config
+  lineinfile:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    regexp: "^#   private_key: /your/private/key/path"
+    line: "  private_key: /etc/letsencrypt/live/{{ domain }}/privkey.pem"
+
+- name: Remove remaining comments from https section in harbor config
+  shell: "sed -i -e 's/# https:/https:/' -e 's/#   port: 443/  port: 443/' /home/{{ user }}/harbor/harbor.yml"
+    
+- name: Install Harbor
+  shell: ./install.sh --with-notary --with-clair --with-chartmuseum
+  become: true
+
+- name: Remove harbor.yml with credential information
+  file:
+    path: "/home/{{ user }}/harbor/harbor.yml"
+    state: absent
+
+- name: Move harbor.service file to remote to set start Harbor service setup
+  copy:
+    src: harbor.service
+    dest: /etc/systemd/system/harbor.service
+    owner: root
+    group: root
+    mode: "755"
+  become: true
+
+- name: Add paths for docker-compose file to the harbor.service
+  replace:
+    path: /etc/systemd/system/harbor.service
+    regexp: "^<harbor-install-path>"
+    replace: "/home/{{ user }}"
+  become: true
+
+- name: Stop all currently running Harbor services
+  systemd:
+    name: harbor
+    state: stopped
+
+- name: Start and enable Harbor service
+  systemd:
+    name: harbor
+    state: started
+    enabled: yes

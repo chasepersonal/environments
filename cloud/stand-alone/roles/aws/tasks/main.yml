@@ -1,0 +1,41 @@
+- name: Import instance variables
+  include_vars: vars.yml
+
+- name: Deploy AWS EC2 instance
+  shell: "aws ec2 run-instances \
+        --image-id {{ image_id }} \
+        --tag-specifications 'ResourceType=instance,Tags=[{% raw -%}{Key=Name,Value={%- endraw %}{{ name }}{% raw -%}}{%- endraw %}]' \
+        --count {{ count }} \
+        --instance-type {{ instance_type }} \
+        --key-name {{ key_name }} \
+        --security-group-ids {{ sg_id }} \
+        --subnet-id {{ sb_id }} \
+        --block-device-mappings file://mapping.json"
+  register: aws_output
+
+- debug: 
+    var: aws_output.stdout_lines
+
+- name: Get Instance ID
+  shell: "{{ aws_output }} | jq -r '.Instances[0].InstanceId'"
+  register: instance_id_output
+
+- name: Get Public DNS
+  shell: "aws ec2 describe-instances --instance-ids {{ instance_id_output }} | jq '.Reservations[0].Instances[0].PublicDnsName'"
+  register: machine_network_output
+  until: public_dns_output != -1
+  retries: 10
+  delay: 10
+
+- name: Generating user based on image flavor used
+  shell: ./generate_aws_user.sh {{ instance_id }}
+  register: user
+
+- debug:
+    msg: 
+      - "Your Public DNS is {{ public_dns_output }}"
+      - "You can access your new instance as follows:"
+      - "ssh -i {{ key-name }}.pem {{ user }}@{{ machine_network_output }}"
+      - "Replace the path to the ssh key as needed so that it points to the correct folder."
+      - "If the user value listed does not work, try using *root* instead."
+   

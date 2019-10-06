@@ -1,0 +1,7 @@
+---
+- hosts: harbor-server
+  remote_user: "{{ user }}"
+  roles:
+    - harbor
+
+    

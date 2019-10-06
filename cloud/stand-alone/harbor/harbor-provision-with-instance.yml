@@ -1,0 +1,23 @@
+---
+- hosts: localhost
+  remote_user: "{{ user }}"
+  tasks:
+  - include_role: "{{ cloud_provider }}"
+
+  - name: Remove current entries from inventory file
+    lineinfile:
+      path: ./inventory
+      regexp: '^((?![harbor-server]).)*$'
+      state: absent
+
+  - name: Add new machine to inventory file
+    lineinfile:
+      path: ./inventory
+      insertafter: '^[harbor-server]'
+      line: "{{ machine_network_output }}"
+
+
+- hosts: harbor-server
+  remote_user: "{{ user }}"
+  roles:
+    - harbor
