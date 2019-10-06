@@ -1,0 +1,11 @@
+{
+    "environment": {
+        "image-id": "",
+        "name": "",
+        "count": "",
+        "instance-type": "",
+        "key-name": "",
+        "sg-id": "",
+        "sb-id": ""
+    }
+}

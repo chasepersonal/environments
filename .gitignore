@@ -1,2 +1,4 @@
-*.json
+*key.json
+docker-login.json
 .vagrant
+.log
