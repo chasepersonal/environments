@@ -1,8 +1,13 @@
+#!/bin/bash
 
 # Get user name of AWS from instance id
 # Instance id will be passed in from terminal
-$INSTANCE_ID=$1
-$FLAVOR=$(aws ec2 describe-images --image-ids $(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].ImageId' --output text) --query 'Images[0].Name' --output text | cut -d "/" -f 1)
+# Exit if the aws command fails
+
+set -e
+set -o pipeline
+
+FLAVOR=$(aws ec2 describe-images --image-ids $(aws ec2 describe-instances --instance-ids $1 --query 'Reservations[0].Instances[0].ImageId' --output text) --query 'Images[0].Name' --output text | cut -d "/" -f 1)
 
 if [[ $FLAVOR == centos ]];
 then

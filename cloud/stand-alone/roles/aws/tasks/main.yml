@@ -1,5 +1,5 @@
 - name: Import instance variables
-  include_vars: vars.yml
+  include_vars: ./vars/aws/vars.yml
 
 - name: Deploy AWS EC2 instance
   shell: "aws ec2 run-instances \
@@ -10,32 +10,49 @@
         --key-name {{ key_name }} \
         --security-group-ids {{ sg_id }} \
         --subnet-id {{ sb_id }} \
-        --block-device-mappings file://mapping.json"
+        --block-device-mappings file://./roles/aws/files/mapping.json"
   register: aws_output
 
-- debug: 
-    var: aws_output.stdout_lines
+- set_fact:
+    aws_info: "{{ aws_output.stdout | from_json }}"
 
-- name: Get Instance ID
-  shell: "{{ aws_output }} | jq -r '.Instances[0].InstanceId'"
-  register: instance_id_output
+- name: Show output from AWS Instance Creation
+  debug: 
+    msg: "{{ aws_info }}"
+
+- set_fact:
+    instance_id_output: "{{ aws_info.Instances[0].InstanceId }}"
+
+- name: Display Instance ID
+  debug:
+    msg: "{{ instance_id_output }}"
+
+- name: Make Public DNS retrieval script executable
+  file:
+    path: ./roles/aws/files/get-public-dns.sh
+    mode: '0755'
 
 - name: Get Public DNS
-  shell: "aws ec2 describe-instances --instance-ids {{ instance_id_output }} | jq '.Reservations[0].Instances[0].PublicDnsName'"
-  register: machine_network_output
-  until: public_dns_output != -1
+  shell: ./roles/aws/files/get-public-dns.sh {{ instance_id_output }}
+  register: public_dns_output
+  until: public_dns_output is defined
   retries: 10
   delay: 10
 
+- name: Make user identifying script executable
+  file:
+    path: ./roles/aws/files/generate-user.sh
+    mode: '0755'
+
 - name: Generating user based on image flavor used
-  shell: ./generate_aws_user.sh {{ instance_id }}
+  shell: ./roles/aws/files/generate-user.sh {{ instance_id_output }}
   register: user
 
 - debug:
     msg: 
       - "Your Public DNS is {{ public_dns_output }}"
       - "You can access your new instance as follows:"
-      - "ssh -i {{ key-name }}.pem {{ user }}@{{ machine_network_output }}"
+      - "ssh -i {{ key-name }}.pem {{ user }}@{{ public_dns_output }}"
       - "Replace the path to the ssh key as needed so that it points to the correct folder."
       - "If the user value listed does not work, try using *root* instead."
    

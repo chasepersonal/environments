@@ -1,0 +1,7 @@
+image_id: ami-0d5d9d301c853a04a
+name: test
+count: 1
+instance_type: t2.micro
+key_name: test
+sg_id: sg-b0377cde
+sb_id: subnet-9e300af6
