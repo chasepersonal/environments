@@ -1,43 +1,55 @@
 - name: Import instance variables
-  include_vars: ./vars/aws/vars.yml
+  include_vars:
+    dir: 'vars/aws'
 
-- name: Deploy AWS EC2 instance
-  shell: "aws ec2 run-instances \
-        --image-id {{ image_id }} \
-        --tag-specifications 'ResourceType=instance,Tags=[{% raw -%}{Key=Name,Value={%- endraw %}{{ name }}{% raw -%}}{%- endraw %}]' \
-        --count {{ count }} \
-        --instance-type {{ instance_type }} \
-        --key-name {{ key_name }} \
-        --security-group-ids {{ sg_id }} \
-        --subnet-id {{ sb_id }} \
-        --block-device-mappings file://./roles/aws/files/mapping.json"
-  register: aws_output
-
-- set_fact:
-    aws_info: "{{ aws_output.stdout | from_json }}"
+- name: Create AWS ec2 instance
+  ec2:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    key_name: "{{ keypair }}"
+    group_id: "{{ sg_id }}"
+    vpc_subnet_id: "{{ sb_id }}"
+    assign_public_ip: yes
+    instance_type: "{{ instance_type }}"
+    image: "{{ image_id }}"
+    wait: yes
+    wait_timeout: 500
+    volumes:
+      - device_name: "{{ device_name }}"
+        volume_type: "{{ volume_type }}"
+        volume_size: "{{ volume_size }}"
+        delete_on_termination: true
+    exact_count: "{{ count }}"
+    region: "{{ region }}"
+  register: ec2
 
 - name: Show output from AWS Instance Creation
   debug: 
-    msg: "{{ aws_info }}"
-
-- set_fact:
-    instance_id_output: "{{ aws_info.Instances[0].InstanceId }}"
+    msg: "{{ ec2.stdout }}"
 
 - name: Display Instance ID
   debug:
-    msg: "{{ instance_id_output }}"
+    msg: "{{ item.id }}"
+  with_items: "{{ ec2.instances }}"
 
-- name: Make Public DNS retrieval script executable
-  file:
-    path: ./roles/aws/files/get-public-dns.sh
-    mode: '0755'
+- name: Add name tag to instance
+  ec2_tag:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    resource: "{{ item.id }}" 
+    region: "{{ region }}" 
+    state: "present"
+  with_items: "{{ ec2.instances }}"
+  args:
+    tags:
+      Name: "{{ name }}"
 
-- name: Get Public DNS
-  shell: ./roles/aws/files/get-public-dns.sh {{ instance_id_output }}
-  register: public_dns_output
-  until: public_dns_output is defined
-  retries: 10
-  delay: 10
+- name: Wait for SSH to be available
+  wait_for:
+    host: "{{ item.public_dns_name }}"
+    port: 22 
+    state: started 
+  with_items: "{{ ec2.instances }}"
 
 - name: Make user identifying script executable
   file:
@@ -45,14 +57,17 @@
     mode: '0755'
 
 - name: Generating user based on image flavor used
-  shell: ./roles/aws/files/generate-user.sh {{ instance_id_output }}
+  shell: ./roles/aws/files/generate-user.sh {{ item.id }}
   register: user
+  with_items: "{{ ec2.instances }}"
 
-- debug:
+- name: Display connection steps
+  debug:
     msg: 
-      - "Your Public DNS is {{ public_dns_output }}"
+      - "Your Public DNS is {{ item.public_dns_name }}"
       - "You can access your new instance as follows:"
-      - "ssh -i {{ key-name }}.pem {{ user }}@{{ public_dns_output }}"
+      - "ssh -i {{ key-name }}.pem {{ user }}@{{ item.public_dns_name }}"
       - "Replace the path to the ssh key as needed so that it points to the correct folder."
       - "If the user value listed does not work, try using *root* instead."
+    with_items: "{{ ec2.instances }}"
    

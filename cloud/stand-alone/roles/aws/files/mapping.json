@@ -1,9 +1,0 @@
-[
-    {
-        "DeviceName": "/dev/sdf",
-        "Ebs": {
-            "DeleteOnTermination": true,
-            "VolumeSize": 16
-        }
-    }
-]

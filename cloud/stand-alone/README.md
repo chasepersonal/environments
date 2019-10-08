@@ -12,6 +12,10 @@ It is only mean to deploy the VM.
 
 It must be provisioned through another file.
 
+Playbook can be run with the following command. Example is using AWS as the cloud provider:
+
+`ansible-playbook --ask-vault-pass deploy-cloud-instance.yml --extra-vars="cloud=aws"`
+
 ## harbor-provision-only.yml
 
 This will utilize Ansible to provision a VMWare Harbor Registry.
