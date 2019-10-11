@@ -1,3 +1,9 @@
+- name: Import instance variables
+  include_vars:
+    dir: 
+    - 'vars/harbor'
+    - 'vars/aws'
+
 - name: Install Docker dependencies
   apt:
     name: "{{ packages }}"
@@ -73,41 +79,16 @@
     src: harbor-offline-installer*.tgz
     dest: "/home/{{ user }}"
 
-- name: Create a backup of the harbor.yml config
-  command: cp harbor.yml harbor-backup.yml
+- name: Convert default harbor.yml to a backup
+  command: mv harbor.yml harbor-backup.yml
 
-- name: Add hostname to the harbor.yml config
-  lineinfile:
-    path: "/home/{{ user }}/harbor/harbor.yml"
-    regexp: "^hostname: reg.mydomain.com"
-    line: "hostname: {{ domain }}"
+- name: Setup harbor configuration outline
+  template:
+    src: harbor
+    dest: "/home/{{ user }}/harbor/"
 
-- name: Add admin password to the harbor.yml config
-  lineinfile:
-    path: "/home/{{ user }}/harbor/harbor.yml"
-    regexp: "^harbor_admin_password: Harbor12345"
-    line: "harbor_admin_password: {{ admin_password }}"
-
-- name: Add in database password to the harbor.yml config
-  lineinfile:
-    path: "/home/{{ user }}/harbor/harbor.yml"
-    regexp: "^  password: root123"
-    line: "  password: {{ db_password }}"
-
-- name: Add cert to harbor config
-  lineinfile:
-    path: "/home/{{ user }}/harbor/harbor.yml"
-    regexp: "^#   certificate: /your/certificate/path"
-    line: "  certificate: /etc/letsencrypt/live/{{ domain }}/fullchain.pem"
-
-- name: Add private key to harbor config
-  lineinfile:
-    path: "/home/{{ user }}/harbor/harbor.yml"
-    regexp: "^#   private_key: /your/private/key/path"
-    line: "  private_key: /etc/letsencrypt/live/{{ domain }}/privkey.pem"
-
-- name: Remove remaining comments from https section in harbor config
-  shell: "sed -i -e 's/# https:/https:/' -e 's/#   port: 443/  port: 443/' /home/{{ user }}/harbor/harbor.yml"
+- name: Convert harbor configuration outline to usable .yml file
+  command: mv harbor harbor.yml
     
 - name: Install Harbor
   shell: ./install.sh --with-notary --with-clair --with-chartmuseum
@@ -118,20 +99,13 @@
     path: "/home/{{ user }}/harbor/harbor.yml"
     state: absent
 
-- name: Move harbor.service file to remote to set start Harbor service setup
-  copy:
+- name: Setup Harbor systemctl service on remote
+  template:
     src: harbor.service
     dest: /etc/systemd/system/harbor.service
     owner: root
     group: root
-    mode: "755"
-  become: true
-
-- name: Add paths for docker-compose file to the harbor.service
-  replace:
-    path: /etc/systemd/system/harbor.service
-    regexp: "^<harbor-install-path>"
-    replace: "/home/{{ user }}"
+    mode: "0755"
   become: true
 
 - name: Stop all currently running Harbor services
