@@ -1,11 +1,11 @@
 keypair: 
-image_id: 
-name: 
-count: 
-instance_type: 
+image_id: ami-0d5d9d301c853a04a
+name: harbor-test
+count: 1
+instance_type: t2.micro
 sg_id: 
 sb_id: 
-device_name: 
-volume_type: 
-volume_size: 
-region:
+device_name: /dev/sdf
+volume_type: gp2
+volume_size: 16
+region: us-east-2

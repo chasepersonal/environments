@@ -82,10 +82,14 @@
 - name: Convert default harbor.yml to a backup
   command: mv harbor.yml harbor-backup.yml
 
+- name: Set harbor install path
+  set_fact:
+    harbor_install_path: "/home/{{ user }}/harbor/"
+
 - name: Setup harbor configuration outline
   template:
     src: harbor
-    dest: "/home/{{ user }}/harbor/"
+    dest: "{{ harbor_install_path }}"
 
 - name: Convert harbor configuration outline to usable .yml file
   command: mv harbor harbor.yml
@@ -96,7 +100,7 @@
 
 - name: Remove harbor.yml with credential information
   file:
-    path: "/home/{{ user }}/harbor/harbor.yml"
+    path: "{{ harbor_install_path }}/harbor.yml"
     state: absent
 
 - name: Setup Harbor systemctl service on remote

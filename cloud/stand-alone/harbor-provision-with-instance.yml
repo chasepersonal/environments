@@ -1,13 +1,14 @@
 ---
 - hosts: localhost
   tasks:
-  - include_role: "{{ cloud }}"
+  - include_role: 
+      name: "{{ cloud }}"
 
   - name: Add the newly created host so that we can contact it to install Harbor
-      add_host:
-        name: "{{ item.public_ip }}"
-        groups: harbor-server
-      with_items: "{{ ec2.instances }}"
+    add_host:
+      name: "{{ item.public_ip }}"
+      groups: harbor-server
+    with_items: "{{ new_machine }}"
 
 - hosts: harbor-server
   remote_user: "{{ hostvars['localhost']['user'] }}"

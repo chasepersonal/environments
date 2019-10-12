@@ -22,6 +22,14 @@ This will utilize Ansible to provision a VMWare Harbor Registry.
 
 It's intended purpose is to provision a VM that has already been deployed.
 
+Playbook can be run with the following command.
+
+`ansible-playbook --ask-vault-pass -i inventory harbor-provision-only.yml --extra-vars="user=user"`
+
+A user will need to be indicated depending on the user name you wish to install Harbor under.
+
+You will also need to include the name of the machine under [harbor-server] group in the inventory provided
+
 ## harbor-provision-with-instance.yml
 
 This will utilize Ansible to deploy a VM, or VM's, and provision it with the tools needed to run a VMWare Harbor Registry.
