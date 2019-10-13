@@ -1,14 +1,28 @@
-- name: Import instance variables
+- name: Import variables needed for harbor install
   include_vars:
-    dir: 
-    - 'vars/harbor'
-    - 'vars/aws'
+    dir: 'vars/harbor'
+
+- name: Import variables from AWS to configure s3 storage
+  include_vars:
+    dir: 'vars/aws'
+
+#- name: Create CNAME record in Cloudflare for the registry
+#  cloudflare_dns:
+#    zone: chaseweyer.com
+#    record: registry
+#    type: CNAME
+#    value: "{{ ansible_hostname }}"
+#    proxied: yes
+#    account_email: "{{ email }}"
+#    account_api_token: "{{ cloudflare_api_token }}"
+#    state: present
 
 - name: Install Docker dependencies
   apt:
-    name: "{{ packages }}"
+    name: "{{ dependencies }}"
+    update_cache: yes
   vars:
-    packages:
+    dependencies:
     - apt-transport-https
     - curl
     - software-properties-common
@@ -16,25 +30,40 @@
 
 - name: Download docker key
   shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  
+
+- name: Add stable repo to download Docker
+  shell: add-apt-repository \
+        "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  become: true
+
 - name: Install Docker
   apt:
-    name: docker.io
+    name: "{{ packages }}"
+    update_cache: yes
+  vars:
+    packages:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
   become: true
+
+- name: Grab current user
+  shell: echo "$(whoami)"
+  register: user
 
 - name: Add current user to the Docker group
   user:
-    name: "{{ user }}"
+    name: "{{ user.stdout }}"
     group: docker
     append: yes
-    become: true
+  become: true
   
 - name: Start and enable Docker service
   service:
     name: docker
     state: started
     enabled: yes
-    become: true
+  become: true
 
 - name: Download Docker Compose
   shell: "curl -s {{ url }} | grep {{ first_grep }} | grep {{ second_grep }} | {{ cut_action }} | wget -qi -"
@@ -46,8 +75,9 @@
   
 - name: Make Docker Compose file executable
   file:
-    path: "/home/{{ user }}"
+    path: "/home/{{ user.stdout }}/docker-compose-Linux-x86_64"
     mode: "700"
+  become: true
 
 - name: Move Docker Compose executable to the bin
   shell: mv docker-compose-Linux-x86_64 /usr/local/bin/docker-compose
@@ -56,17 +86,21 @@
 - name: Download Let's Encrypt Certbot
   command: wget https://dl.eff.org/certbot-auto
 
-- name: Make certbot file executable
-  file:
-    path: "/home/{{ user }}"
-    mode: "700"
-
 - name: Move certbot file to the bin
   shell: mv certbot-auto /usr/local/bin
   become: true
 
+- name: Make root the owner of the certbot executable and allow it to be run
+  file:
+    path: "/usr/local/bin/certbot-auto"
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
 - name: Run certbot to generate Let's Encrypt certificates
   shell: "certbot-auto certonly --standalone -d {{ domain }} --preferred-challenges http --agree-tos -n -m {{ email }} --keep-until-expiring"
+  become: true
 
 - name: Download Harbor
   shell: "curl -s {{ repo_url }} | grep -o '{{ regex_locator }}' | wget -qi -"
@@ -75,16 +109,18 @@
     regex_locator: https://storage[a-zA-Z.-]*/[a-zA-Z0-9+-]*/[a-zA-Z0-9.+-]*/[a-zA-Z0-9.+-]*
 
 - name: Extract files from downloaded .tgz
-  unarchive:
-    src: harbor-offline-installer*.tgz
-    dest: "/home/{{ user }}"
-
-- name: Convert default harbor.yml to a backup
-  command: mv harbor.yml harbor-backup.yml
+  shell: tar xvzf harbor-offline-installer*.tgz
 
 - name: Set harbor install path
   set_fact:
-    harbor_install_path: "/home/{{ user }}/harbor/"
+    harbor_install_path: "/home/{{ user.stdout }}/harbor"
+
+- name: Convert default harbor.yml to a backup
+  command: mv {{ harbor_install_path }}/harbor.yml {{ harbor_install_path }}/harbor-backup.yml
+
+- name: Set harbor install path
+  set_fact:
+    harbor_install_path: "/home/{{ user.stdout }}/harbor"
 
 - name: Setup harbor configuration outline
   template:
@@ -92,10 +128,10 @@
     dest: "{{ harbor_install_path }}"
 
 - name: Convert harbor configuration outline to usable .yml file
-  command: mv harbor harbor.yml
+  command: mv {{ harbor_install_path }}/harbor {{ harbor_install_path }}/harbor.yml
     
 - name: Install Harbor
-  shell: ./install.sh --with-notary --with-clair --with-chartmuseum
+  shell: "{{ harbor_install_path }}/install.sh --with-notary --with-clair --with-chartmuseum"
   become: true
 
 - name: Remove harbor.yml with credential information
@@ -116,9 +152,11 @@
   systemd:
     name: harbor
     state: stopped
+  become: true
 
 - name: Start and enable Harbor service
   systemd:
     name: harbor
     state: started
     enabled: yes
+  become: true

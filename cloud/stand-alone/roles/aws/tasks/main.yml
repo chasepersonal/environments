@@ -44,11 +44,6 @@
   set_fact:
     new_machine: "{{ ec2.instances }}"
 
-- name: Display Instance ID
-  debug:
-    msg: "{{ item.id }}"
-  with_items: "{{ new_machine }}"
-
 - name: Add name tag to instance
   ec2_tag:
     resource: "{{ item.id }}" 
@@ -58,6 +53,7 @@
   args:
     tags:
       Name: "{{ name }}"
+  no_log: True
 
 - name: Wait for SSH to be available
   wait_for:
@@ -66,6 +62,7 @@
     state: started
     timeout: 500
   with_items: "{{ new_machine }}"
+  no_log: True
 
 - name: Make user identifying script executable
   file:
@@ -74,18 +71,30 @@
 
 - name: Generating user based on image flavor used
   shell: ./roles/aws/files/generate-user.sh {{ item.id }}
-  register: user
+  register: new_user
   with_items: "{{ new_machine }}"
+  no_log: True
+
+- name: Set user variable
+  set_fact:
+    user: "{{ item.stdout }}"
+  with_items: "{{ new_user.results }}"
+
+- name: Set keypair name to be used for ssh
+  set_fact:
+    full_keypair: "{{ keypair }}.pem"
 
 - name: Display connection steps
   debug:
     msg: 
       - "Your Public DNS is {{ item.public_dns_name }}"
       - "You can access your new instance as follows:"
-      - "ssh -i {{ key-name }}.pem {{ user }}@{{ item.public_dns_name }}"
+      - "ssh -i {{ full_keypair }} {{ user }}@{{ item.public_dns_name }}"
       - "Replace the path to the ssh key as needed so that it points to the correct folder."
       - "If the user value listed does not work, try using *root* instead."
-    with_items: "{{ new_machine }}"
+  with_items: "{{ new_machine }}"
+  loop_control:
+   label: "{{ item.public_dns_name }}"
 
 - name: Remove AWS configuration and credentials
   file:

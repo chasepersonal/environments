@@ -1,10 +1,8 @@
-keypair: 
+keypair: harbor
 image_id: ami-0d5d9d301c853a04a
-name: harbor-test
+name: harbor
 count: 1
-instance_type: t2.micro
-sg_id: 
-sb_id: 
+instance_type: t2.micro 
 device_name: /dev/sdf
 volume_type: gp2
 volume_size: 16

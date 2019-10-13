@@ -6,11 +6,14 @@
 
   - name: Add the newly created host so that we can contact it to install Harbor
     add_host:
-      name: "{{ item.public_ip }}"
+      name: "{{ item.public_dns_name}}"
       groups: harbor-server
     with_items: "{{ new_machine }}"
+    no_log: True
 
 - hosts: harbor-server
   remote_user: "{{ hostvars['localhost']['user'] }}"
+  vars:
+    ansible_ssh_private_key_file: "/home/ansible/.ssh/{{ hostvars['localhost']['full_keypair'] }}"
   roles:
     - harbor
