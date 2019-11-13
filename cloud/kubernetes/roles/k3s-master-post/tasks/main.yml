@@ -1,0 +1,163 @@
+- name: Include variable for AWS S3 config
+  include_vars:
+    dir: 'vars/aws'
+
+- name: Include variables for Harbor config
+  include_vars:
+    dir: 'vars/harbor'
+
+- name: Include variables for k3s items
+  include_vars:
+    dir: 'vars/k3s'
+
+- name: Get information of nodes that aren't labeled as master
+  shell: kubectl get no --selector='!node-role.kubernetes.io/master' | awk 'FNR>1'
+  register: workers
+
+- name: Generate list of workers that don't have worker roles 
+  shell:  kubectl get no --selector='!node-role.kubernetes.io/master' | awk 'FNR>1 { print $1 }'
+  register: workers_no_role
+  when: '"<none>" in workers.stdout'
+
+- name: Add worker label to worker nodes if it doesn't get added
+  shell: "kubectl label node {{ item }} node-role.kubernetes.io/worker=worker"
+  with_items: "{{ workers_no_role.stdout_lines }}"
+  when: '"<none>" in workers.stdout'
+
+- name: Download and install helm
+  shell: curl -L https://git.io/get_helm.sh | bash
+  args:
+    execuatble: /bin/bash
+
+- name: Create tiller service account
+  shell: kubectl -n kube-system create serviceaccount tiller
+
+- name: Give tiller cluster-admin priviledges
+  shell: kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+
+- name: Ensure ~/.kube directory exists before moving k3s config
+  file:
+    path: "/home/{{ user }}/.kube"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    recurse: yes
+  become: true
+
+- name: Copy k3s config to ~/.kube/config so tiller does not utilize localhost
+  copy:
+    src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
+    dest: "/home/{{ user }}/.kube/config"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    remote_src: True
+  become: true
+
+- name: Initialize helm with the service account tiller
+  shell: helm init --service-account tiller
+
+- name: Set automount to true for tiller
+  shell: kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"automountServiceAccountToken":true}}}}'
+
+- name: Copy all deployment files from host to remote
+  copy:
+    src: files/
+    dest: "/home/{{ user }}"
+
+# - name: Install Longhorn storage system
+#   shell: kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+
+# - name: Delete Longhorn LoadBalancer so it can be replaced with more stable NodePort
+#   shell: kubectl delete svc longhorn-frontend -n longhorn-system
+
+# - name: Create secret for Longhorn UI credentials
+#   shell: "kubectl create secret generic longhorn-auth --from-literal=username={{ longhorn_user }} --from-literal=password={{ longhorn_pass }} -n longhorn-system"
+
+# - name: Create Longhorn Nodeport service
+#   shell: kubectl apply -f longhorn-frontend-svc.yml
+
+# - name: Copy aws-secret template from host to remote
+#   template:
+#     src: templates/longhorn-s3-secret.yml.j2
+#     dest: "/home/{{ user }}/longhorn-s3-secret.yml"
+
+# - name: Create aws secret for loghorn storage backups
+#   shell: kubectl apply -f longhorn-s3-secret.yml
+
+# - name: Create registry storage class
+#   shell: kubectl apply -f longhorn-registry.yml
+
+- name: Download Cert-Manager authorization header files
+  shell: kubectl apply \
+    --validate=false \
+    -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+
+- name: Update the helm repos before installing cert-manager
+  shell: helm repo update
+
+- name: Install Cert-Manager
+  shell: helm install stable/cert-manager \
+        --name cert-manager \
+        --namespace cert-manager \
+        --set ingressShim.defaultIssuerName="letsencrypt-prod" \
+        --set ingressShim.defaultIssuerKind="ClusterIssuer" \
+        --version v0.9.0
+
+- name: Copy the cloudflare secret to use Cloudflare DNS with cert-manager
+  template:
+    src: templates/cloudflare-secret.yml.j2
+    dest: "/home/{{ user }}/cloudflare-secret.yml"
+
+- name: Create the cloudflare secret
+  shell: kubectl apply -f cloudflare-secret.yml 
+
+- name: Copy cluster-issuer template template from host to remote
+  template:
+    src: templates/cluster-issuer.yml.j2
+    dest: "/home/{{ user }}/cluster-issuer.yml"
+
+- pause:
+    seconds: 15
+
+- name: Create ClusterIssuer for Let's Encrypt
+  shell: kubectl apply -f cluster-issuer.yml
+
+- name: Copy the cloudflare certificate to use with cert-manager
+  template:
+    src: templates/cloudflare-certificate.yml.j2
+    dest: "/home/{{ user }}/cloudflare-certificate.yml"
+
+- name: Create the cloudflare certificate to use with cert-manager
+  shell: kubectl apply -f cloudflare-certificate.yml
+
+- name: Share Let's Encrypt cert with kube-system namespace
+  shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \
+  | sed s/\"namespace: cert-manager\"/\"namespace: kube-system\"/g \
+  | kubectl apply -n kube-system -f -"
+
+- name: Share Let's Encrypt certificate secret with Longhorn
+  shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \
+  | sed s/\"namespace: cert-manager\"/\"namespace: longhorn-system\"/g \
+  | kubectl apply -n longhorn-system -f -"
+
+- name: Share Let's Encrypt certificate secret with Harbor
+  shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \
+  | sed s/\"namespace: cert-manager\"/\"namespace: harbor-system\"/g \
+  | kubectl apply -n harbor-system -f -" 
+
+- name: Add harbor repo to helm  
+  shell: helm repo add harbor https://helm.goharbor.io
+
+- name: Update harbor repo
+  shell: harbor repo update
+
+- name: Copy harbor install script
+  template:
+    src: templates/harbor.sh.j2
+    dest: "/home/{{ user }}/harbor.sh"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: "700"
+
+- name: Run harbor install script
+  shell: ". /home/{{ user }}/harbor.sh"

@@ -1,0 +1,10 @@
+- name: Install dependencies needed for k3s install and security hardening
+  apt:
+    name: "{{ dependencies }}"
+    update_cache: yes
+    state: present
+  vars:
+    dependencies:
+    - sudo
+    - curl
+    - wget

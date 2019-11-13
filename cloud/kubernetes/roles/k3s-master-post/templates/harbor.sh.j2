@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Install Harbor repo helm
+
+helm install \
+harbor/harbor \
+--name harbor \
+--namespace harbor-system \
+--set expose.ingress.hosts.core="reg.{{ domain }}" \
+--set expose.ingress.hosts.notary="notary.{{ domain }}" \
+--set expose.tls.secretName="cloudflare-cert-prod" \
+--set persistence.resourcePolicy="" \
+--set database.internal.password="{{ db_pass }}" \
+--set externalURL="https://reg.{{ domain }}" \
+--set harborAdminPassword="{{ harbor_pass }}" \
+#--set persistence.persistentVolumeClaim.redis.storageClass="{{ registry_storageclass }}" \
+#--set persistence.persistentVolumeClaim.database.storageClass="{{ registry_storageclass }}" \
+#--set persistence.persistentVolumeClaim.chartmuseum.storageClass="{{ registry_storageclass }}" \
+--set persistence.persistentVolumeClaim.chartmuseum.size="{{ reg_chart_size }}" \
+#--set persistence.persistentVolumeClaim.registry.storageClass="{{ registry_storageclass }}" \
+--set persistence.persistentVolumeClaim.registry.size="{{ reg_chart_size }}" \
+#--set persistence.persistentVolumeClaim.jobservice.storageClass="{{ registry_storageclass }}"
+--set persistence.ImageChartStorage.type="s3" \
+--set persistence.ImageChartStorage.s3.region="us-east-2" \
+--set persistence.ImageChartStorage.s3.bucket="reg.{{ domain }}" \
+--set persistence.ImageChartStorage.s3.accesskey="{{ ec2_access_key }}" \
+--set persistence.ImageChartStorage.s3.secretkey="{{ ec2_secret_key }}"

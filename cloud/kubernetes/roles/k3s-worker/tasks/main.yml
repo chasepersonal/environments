@@ -1,0 +1,7 @@
+- name: Boostrap worker to master node
+  shell: "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v0.9.0 K3S_TOKEN={{ m_token }} K3S_URL=https://{{ m_ip }}:6443 sh -"
+
+- name: Install iscsi for storage
+  apt:
+    name: open-iscsi
+    update_cache: yes

@@ -1,0 +1,25 @@
+---
+- hosts: localhost
+  roles:
+    - terraform-k3s-aws
+
+#- hosts: master
+#  remote_user: "{{ user }}"
+#  become: yes
+#  roles:
+#    - k3s-master-init
+
+#- hosts: workers
+#  serial: 1
+#  remote_user: "{{ user }}"
+#  become: yes
+#  vars:
+#    m_token: "{{ hostvars['MasterCreds']['m_token'] }}"
+#    m_ip: "{{ hostvars['MasterCreds']['m_ip'] }}"
+#  roles:
+#    - k3s-worker
+
+#- hosts: master
+#  remote_user: "{{ user }}"
+#  roles:
+#    - k3s-master-post

@@ -1,0 +1,66 @@
+---
+- name: Include variables needed for security hardening
+  include_vars:
+    dir: 'vars/user'
+
+- name: Install sudo package
+  apt:
+    name: sudo
+    state: present
+
+- name: Create a hashed password
+  shell: "openssl passwd -1 '{{ user_pass }}'"
+  register: hashed_pass
+
+- name: Add non-root user
+  user: 
+    name: "{{ user }}" 
+    password: "{{ hashed_pass.stdout }}" 
+    shell: /bin/bash 
+    groups: root 
+    append: yes
+
+- name: Add non-root user to sudoers
+  lineinfile:
+    path: /etc/sudoers
+    regexp: '^{{ user }} ALL'
+    line: '{{ user }} ALL=(ALL) NOPASSWD: ALL'
+    state: present
+
+- name: Add SSH public key to non-root user in remote machine
+  authorized_key:
+    user: "{{ user }}"
+    key: "{{ lookup('file', '~/.ssh/doc_key.pub') }}"
+    state: present
+
+- name: Disallow root SSH access
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    line: "PermitRootLogin no"
+    state: present
+  notify:
+    - restart ssh
+
+- name: Disallow SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication no"
+    state: present
+  notify:
+    - restart ssh
+
+- name: Totally block root access
+  file:
+    path: /root/.ssh/authorized_keys
+    state: absent
+    
+- name: Disallow SSH GSS API authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^GSSAPIAuthentication"
+    line: "GSSAPIAuthentication no"
+    state: present
+  notify:
+    - restart ssh
