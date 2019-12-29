@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# Quickly launch a k3s instance on RaspberryPi
+# Quickly configure and launch a k3s instance on RaspberryPi
 
 ansible-playbook \
---vault-id aws@prompt \
+-i inventory/pi/inventory \
 --vault-id k3s@prompt \
---vault-id harbor@prompt \
 deploy-k3s-pi.yml

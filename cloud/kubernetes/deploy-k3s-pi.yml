@@ -1,8 +1,14 @@
 - hosts: master
   remote_user: pi
   become: yes
-  roles:
-    - k3s-master-init
+  tasks:
+    - name: Import variables for k3s pi master build
+      include_vars:
+        file: vars/user/pi.yml
+
+    - name: Initiate k3s pi master build
+      import_roles:
+        name: k3s-master-init
 
 - hosts: workers
   serial: 1
@@ -12,9 +18,17 @@
     m_token: "{{ hostvars['MasterCreds']['m_token'] }}"
     m_ip: "{{ hostvars['MasterCreds']['m_ip'] }}"
   roles:
-    - k3s-worker
+    - k3s-worker-pi
 
-- hosts: master
-  remote_user: pi
-  roles:
-    - k3s-master-post
+- hosts: localhost
+  remote_user: devel
+  tasks:
+    - name: Copy kubeconfig from master to host
+      fetch:
+        src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
+        dest: /home/devel/.kube/config
+      delegate_to: master
+
+    - name: Intiate post k3s pi master build helm deployments
+      import_roles:
+        name: k3s-master-post
