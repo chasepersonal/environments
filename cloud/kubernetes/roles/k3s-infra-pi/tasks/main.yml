@@ -1,0 +1,12 @@
+- name: Install MetalLB
+  shell: kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.8.3/manifests/metallb.yaml
+
+- name: Configure MetalLB IP Address Pool for Load Balancing
+  k8s:
+    state: present
+    definition: "{{ lookup('file', '/files/MLBconfig.yml') }}"
+    validate:
+      fail_on_error: yes
+
+- name: Install Contour
+  shell: kubectl apply -f https://projectcontour.io/quickstart/contour.yaml

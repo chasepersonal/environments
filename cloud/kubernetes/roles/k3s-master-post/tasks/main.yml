@@ -6,23 +6,19 @@
 #   include_vars:
 #     dir: 'vars/harbor'
 
-- name: Include variables for k3s items
-  include_vars:
-    dir: 'vars/k3s'
+- name: Verify nodes are in Ready status
+  shell: kubectl get no
+  register: node_status
+  failed_when: "'NotReady' in node_status.stdout"
 
-#- name: Get information of nodes that aren't labeled as master
-#  shell: kubectl get no --selector='!node-role.kubernetes.io/master' | awk 'FNR>1'
-#  register: workers
+- name: Generate list of workers that don't have worker roles 
+  shell:  kubectl get no --selector='!node-role.kubernetes.io/master' | awk 'FNR>1 { print $1 }'
+  register: workers_no_role
 
-#- name: Generate list of workers that don't have worker roles 
-#  shell:  kubectl get no --selector='!node-role.kubernetes.io/master' | awk 'FNR>1 { print $1 }'
-#  register: workers_no_role
-#  when: '"<none>" in workers.stdout'
-
-#- name: Add worker label to worker nodes if it doesn't get added
-#  shell: "kubectl label node {{ item }} node-role.kubernetes.io/worker=worker"
-#  with_items: "{{ workers_no_role.stdout_lines }}"
-#  when: '"<none>" in workers.stdout'
+- name: Add worker label to worker nodes if it doesn't get added
+  shell: "kubectl label node {{ item }} node-role.kubernetes.io/worker=worker"
+  with_items: "{{ workers_no_role.stdout_lines }}"
+  when: '"<none>" in workers.stdout'
 
 # - name: Download and install helm
 #   shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
@@ -86,54 +82,6 @@
 
 # - name: Create registry storage class
 #   shell: kubectl apply -f longhorn-registry.yml
-
-- name: Download Cert-Manager authorization header files
-  shell: kubectl apply \
-    --validate=false \
-    -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
-
-- name: Update the helm repos before installing cert-manager
-  shell: helm repo update
-
-- name: Install Cert-Manager
-  shell: helm install stable/cert-manager \
-        --name cert-manager \
-        --namespace cert-manager \
-        --set ingressShim.defaultIssuerName="letsencrypt-prod" \
-        --set ingressShim.defaultIssuerKind="ClusterIssuer" \
-        --version v0.9.0
-
-- name: Copy the cloudflare secret to use Cloudflare DNS with cert-manager
-  template:
-    src: templates/cloudflare-secret.yml.j2
-    dest: "/home/{{ user }}/cloudflare-secret.yml"
-
-- name: Create the cloudflare secret
-  shell: kubectl apply -f cloudflare-secret.yml 
-
-- name: Copy cluster-issuer template template from host to remote
-  template:
-    src: templates/cluster-issuer.yml.j2
-    dest: "/home/{{ user }}/cluster-issuer.yml"
-
-- pause:
-    seconds: 15
-
-- name: Create ClusterIssuer for Let's Encrypt
-  shell: kubectl apply -f cluster-issuer.yml
-
-- name: Copy the cloudflare certificate to use with cert-manager
-  template:
-    src: templates/cloudflare-certificate.yml.j2
-    dest: "/home/{{ user }}/cloudflare-certificate.yml"
-
-- name: Create the cloudflare certificate to use with cert-manager
-  shell: kubectl apply -f cloudflare-certificate.yml
-
-- name: Share Let's Encrypt cert with kube-system namespace
-  shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \
-  | sed s/\"namespace: cert-manager\"/\"namespace: kube-system\"/g \
-  | kubectl apply -n kube-system -f -"
 
 # - name: Share Let's Encrypt certificate secret with Longhorn
 #   shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \

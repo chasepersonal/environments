@@ -1,0 +1,44 @@
+- name: Download Cert-Manager authorization header files
+  shell: kubectl apply \
+    --validate=false \
+    -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+
+- name: Update the helm repos before installing cert-manager
+  shell: helm repo update
+
+- name: Install Cert-Manager
+  shell: helm install stable/cert-manager \
+        --name cert-manager \
+        --namespace cert-manager \
+        --set ingressShim.defaultIssuerName="letsencrypt-prod" \
+        --set ingressShim.defaultIssuerKind="ClusterIssuer" \
+        --version v0.9.0
+
+- name: Create the cloudflare secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'templates/cloudflare-secret.yml.j2') }}"
+    validate:
+      fail_on_error: yes
+      
+- pause:
+    seconds: 15
+
+- name: Create ClusterIssuer for Let's Encrypt
+  k8s: 
+    state: present
+    definition: "{{ lookup('template', 'templates/cluster-issuer.yml.j2) }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create the cloudflare certificate to use with cert-manager
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'templates/cloudflare-certificate.yml.j2) }}"
+    validate:
+      fail_on_error: yes
+
+- name: Share Let's Encrypt cert with kube-system namespace
+  shell: "kubectl get secret cloudflare-cert-prod -n cert-manager -o yaml \
+  | sed s/\"namespace: cert-manager\"/\"namespace: kube-system\"/g \
+  | kubectl apply -n kube-system -f -"

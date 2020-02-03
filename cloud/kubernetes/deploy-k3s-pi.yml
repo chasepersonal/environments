@@ -2,13 +2,16 @@
   remote_user: pi
   become: yes
   tasks:
-    - name: Import variables for k3s pi master build
-      include_vars:
-        file: vars/user/pi.yml
+  - name: Import variables for k3s pi master build
+    include_vars:
+      file: vars/user/pi.yml
 
-    - name: Initiate k3s pi master build
-      import_roles:
-        name: k3s-master-init
+  - name: Install k3s on master with non-scheduable masters and no traefik
+    shell: curl -sfL https://get.k3s.io | sh -s - server --no-deploy=traefik
+
+  - name: Initiate k3s pi master build
+    import_role:
+      name: k3s-master-init
 
 - hosts: workers
   serial: 1
@@ -18,17 +21,35 @@
     m_token: "{{ hostvars['MasterCreds']['m_token'] }}"
     m_ip: "{{ hostvars['MasterCreds']['m_ip'] }}"
   roles:
-    - k3s-worker-pi
+    - k3s-worker-init
 
 - hosts: localhost
   remote_user: devel
   tasks:
-    - name: Copy kubeconfig from master to host
-      fetch:
-        src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
-        dest: /home/devel/.kube/config
-      delegate_to: master
+  - name: Include variables for k3s items
+    include_vars:
+      dir: vars/k3s
+      
+  - name: Copy kubeconfig from master to host
+    fetch:
+      src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
+      dest: /home/devel/.kube/config
+    delegate_to: master
 
-    - name: Intiate post k3s pi master build helm deployments
-      import_roles:
-        name: k3s-master-post
+  - name: Run Post install checkers on master
+    import_role:
+      name: k3s-master-post
+
+  - name: Install infrastructure for Pi build (Ingress & LB)
+    import_role:
+      name: k3s-infra-pi
+
+  - name: Install Cert Manager
+    import_role:
+      name: cert-manager
+
+  - name: Install Ceph
+    import_role:
+      name: ceph
+    vars:
+      build_file: files/ceph-cluster-pi.yml

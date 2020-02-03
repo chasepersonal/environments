@@ -1,9 +1,6 @@
 # - name: Install k3s and make master unschedulable
 #   shell: curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v0.9.0 sh -s - server --node-taint key1=value1:NoExecute
 
-- name: Install k3s on master node
-  shell: curl -sfL https://get.k3s.io
-
 - name: Add non-root user as owner of Rancher k3s config
   file:
     path: /etc/rancher/k3s/k3s.yaml
@@ -11,11 +8,12 @@
     group: "{{ user }}"
 
 - name: Export token to be used with worker bootstrap
-  shell: sudo cat /var/lib/rancher/k3s/server/node-token
+  shell: cat /var/lib/rancher/k3s/server/node-token
   register: master_token
+  become: yes
 
-- name: Export public ip addresss for boostrapping worker nodes
-  shell: curl ifconfig.me
+- name: Export master ip addr for boostrapping worker nodes
+  shell: hostname -I | awk '{ print $1 }'
   register: master_ip
 
 - name: Create holder for token and ip so it can be applied to the workers
