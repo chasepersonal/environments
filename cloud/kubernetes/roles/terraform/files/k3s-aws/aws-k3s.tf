@@ -106,7 +106,7 @@ resource "aws_instance" "k3s-worker" {
   key_name          = aws_key_pair.k3s.key_name
   source_dest_check = true
   tags = {
-    Name = "k3s-cpw-w-${count.index}"
+    Name = "k3s-aws-w-${count.index}"
   }
 }
 
@@ -120,6 +120,6 @@ resource "aws_instance" "k3s-master" {
   key_name          = aws_key_pair.k3s.key_name
   source_dest_check = true
   tags = {
-    Name = "k3s-cpw-m-${count.index}"
+    Name = "k3s-aws-m-${count.index}"
   }
 }

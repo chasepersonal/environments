@@ -1,6 +1,6 @@
-- name: Include variables for terraform so it can access AWS
+- name: Include variables for terraform so it can access DigitalOcean
   include_vars:
-    dir: 'vars/aws-ec2'
+    dir: 'vars/do'
 
 - name: Move vars template to main folder
   template:
@@ -9,9 +9,10 @@
 
 - name: Move terraform files to main folder
   copy:
-    src: files/
+    src: files/k3s-do/
     dest: /environments/cloud/kubernetes 
     
 - name: Import terraform role and run tasks associated with it 
   import_role:
-    name: terraform-main
+    name: terraform
+    tasks_from: main

@@ -11,7 +11,8 @@
 
   - name: Initiate k3s pi master build
     import_role:
-      name: k3s-master-init
+      name: k3s
+      tasks_from: master-init
 
 - hosts: workers
   serial: 1
@@ -20,8 +21,11 @@
   vars:
     m_token: "{{ hostvars['MasterCreds']['m_token'] }}"
     m_ip: "{{ hostvars['MasterCreds']['m_ip'] }}"
-  roles:
-    - k3s-worker-init
+  tasks:
+    
+    - name: Import worker initialization steps
+      import_role: k3s
+      tasks_from: worker-init
 
 - hosts: localhost
   remote_user: devel
@@ -38,11 +42,13 @@
 
   - name: Run Post install checkers on master
     import_role:
-      name: k3s-master-post
+      name: k3s
+      tasks_from: master-post
 
   - name: Install infrastructure for Pi build (Ingress & LB)
     import_role:
-      name: k3s-infra-pi
+      name: k3s
+      tasks_from: infra-pi
 
   - name: Install Cert Manager
     import_role:
