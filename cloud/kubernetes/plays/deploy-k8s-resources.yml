@@ -1,0 +1,19 @@
+- hosts: localhost
+  remote_user: "{{ user }}"
+  tasks:
+    - name: Install MetalLB (Bare Metal Only)
+      import_role:
+        name: ../roles/metallb
+      when: build == 'pi'
+
+    - name: Install Contour
+      import_role:
+        name: ../roles/contour
+
+    - name: Install Cert Manager
+      import_role:
+        name: ../roles/cert-manager
+
+    - name: Install Ceph
+      import_role:
+        name: ../roles/ceph

@@ -1,0 +1,73 @@
+- name: Include AWS credentials to allow creation of s3 bucket for Terraform state
+  include_vars:
+    file: vars/aws/k3s-creds.yml
+
+- name: Include variables for terraform so it can access DigitalOcean
+  include_vars:
+    dir: 'vars/do'
+  when: build == 'do'
+
+- name: Set varaible folder location
+  set_fact:
+    variable_folder: "k3s-{{ build }}"
+
+- name: Move vars template to main folder
+  template:
+    src: templates/{{ variable_folder }}terraform.tfvars.j2
+    dest: ../../../kubernetes/terraform.tfvars
+
+- name: Set bucket name for Terraform state s3 bucket
+  set_fact:
+    bucket: "k3s-{{ build }}-cpw-cluster-state"
+
+- name: Ensure an s3 bucket exists to store the Terraform state in
+  s3_bucket:
+    name: "k3s-{{ build }}-cpw-cluster-state"
+    state: present
+    versioning: yes
+    encryption: AES256
+    region: us-east-2
+
+- name: Copy over the s3 backend configuration file
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: ../../../kubernetes/s3-backend.tf
+
+- name: Set terraform build file
+  set_fact:
+    terraform_build_file: "files/k3s-{{ build }}/"
+
+- name: Generate name for the Terraform plan file
+  set_fact:
+    tf_plan_name: "{{ build }}-k3s"
+
+- name: Move terraform files to main folder
+  copy:
+    src: "{{ terraform_build_file }}"
+    dest: ../../../kubernetes
+
+- name: Import main terraform steps
+  tasks_from: main.yml
+
+- name: Get master ip's
+  shell: terraform output | grep m | awk '{ print $3 }'
+  register: master_ips
+
+- name: Get worker ip's
+  shell: terraform output | grep w | awk '{ print $3 }'
+  register: worker_ips
+
+- name: Add master ips to in memory inventory
+  add_host:
+    name: "{{ item }}"
+    group: master
+  with_items: "{{ master_ips.stdout_lines }}"
+
+- name: Add worker ips to in memory inventory
+  add_host:
+    name: "{{ item }}"
+    group: workers
+  with_items: "{{ worker_ips.stdout_lines }}"
+
+- pause:
+    seconds: 15

@@ -1,0 +1,14 @@
+- hosts: localhost
+  tasks:
+    - name: AWS - Import AWS credentials
+      include_vars:
+        file: ../vars/aws/kops-creds.yml
+        
+    - name: Import kops role to prep cluster
+      import_role:
+        name: ../roles/kops
+    
+    - name: Import terraform role to build cluster
+      include_role:
+        name: ../roles/terraform
+        tasks_from: kops

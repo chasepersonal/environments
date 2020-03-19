@@ -8,30 +8,7 @@
   when: terraform_init.stat.exists == False
 
 - name: Run terraform plan and create a plan file
-  shell: terraform plan -out=terraform.tfplan
+  shell: terraform plan -out={{ tf_plan_name }}.tfplan
 
 - name: Run terraform apply from plan file
-  shell: terraform apply "terraform.tfplan"
-
-- name: Get master ip's
-  shell: terraform output | grep m | awk '{ print $3 }'
-  register: master_ips
-
-- name: Get worker ip's
-  shell: terraform output | grep w | awk '{ print $3 }'
-  register: worker_ips
-
-- name: Add master ips to in memory inventory
-  add_host:
-    name: "{{ item }}"
-    group: master
-  with_items: "{{ master_ips.stdout_lines }}"
-
-- name: Add worker ips to in memory inventory
-  add_host:
-    name: "{{ item }}"
-    group: workers
-  with_items: "{{ worker_ips.stdout_lines }}"
-
-- pause:
-    seconds: 15
+  shell: terraform apply "{{ tf_plan_name }}.tfplan"

@@ -1,0 +1,15 @@
+- name: Generate name for the Terraform plan file
+  set_fact:
+    tf_plan_name: "{{ build }}-kops"
+
+- name: Set bucket name for Terraform state s3 bucket
+  set_fact:
+    bucket: "kops-{{ build }}-cpw-cluster-state"
+
+- name: Copy over the s3 backend configuration file
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: ../../../kubernetes/s3-backend.tf
+
+- name: Import terrform steps to do the terraform build
+  include_tasks: main.yml

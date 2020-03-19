@@ -1,25 +1,19 @@
 - hosts: localhost
   tasks:
-    - name: Import vars for aws-ec2 builds
-      include_vars:
-        dir: vars/aws-ec2
-
-    - name: Import k3s aws deployment
+    - name: Import Terraform deployment
       import_role:
-        name: terraform
-        tasks_from: k3s-aws
+        name: ../roles/terraform
+        tasks_from: k3s
+      when: build == 'do' or build == 'aws'
 
 - hosts: master
   remote_user: "{{ user }}"
   become: yes
   tasks:
 
-    - name: Install k3s and make master unschedulable
-      shell: curl -sfL https://get.k3s.io | sh -s - server --node-taint key1=value1:NoExecute
-
     - name: Import master initialization steps
       import_role:
-        name: k3s
+        name: ../roles/k3s
         tasks_from: master-init
 
 - hosts: workers
@@ -33,11 +27,10 @@
 
     - name: Import worker initialization steps
       import_role:
-        name: k3s
+        name: ../roles/k3s
         tasks_from: worker-init
 
 - hosts: localhost
-  remote_user: "{{ user }}"
   tasks:
 
     - name: Include variables for k3s items
@@ -48,19 +41,9 @@
       fetch:
         src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
         dest: /home/devel/.kube/config
-      delegate_to: master
+      delegate_to: "{{ groups['master'] | random }}"
   
     - name: Import master post install steps
       import_role:
-        name: k3s
+        name: ../roles/k3s
         tasks_from: master-post
-
-    - name: Import cert-manager install steps
-      import_role:
-        name: cert-manager
-
-    - name: Import ceph install steps
-      import_role:
-        name: ceph
-      vars:
-        build_file: templates/ceph-cluster-aws.yml

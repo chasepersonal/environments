@@ -1,0 +1,7 @@
+- name: AWS - Set Build File
+  set_fact:
+    cluster_build_file: /templates/aws-cluster-config.yml
+  when: build == 'aws'
+
+- name: Create kops cluster configuration
+  shell: "kops create cluster -f {{ cluster_build_file }} --out . --target terraform"

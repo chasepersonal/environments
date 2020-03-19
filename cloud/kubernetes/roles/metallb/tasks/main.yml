@@ -7,6 +7,3 @@
     definition: "{{ lookup('file', '/files/MLBconfig.yml') }}"
     validate:
       fail_on_error: yes
-
-- name: Install Contour
-  shell: kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
