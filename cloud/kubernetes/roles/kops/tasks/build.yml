@@ -1,7 +1,32 @@
-- name: AWS - Set Build File
-  set_fact:
-    cluster_build_file: /templates/aws-cluster-config.yml
+- name: AWS - Set Bucket, Image, and Configure CLI
+  block:
+    - name: Set image to be used
+      set_fact:
+        image: 125523088429/fedora-coreos-31.20200223.3.0-hvm
+    - name: Set bucket location
+      set_fact:
+        bucket: s3://kops-aws-cluster-state-cpw
+    - name: Set AWS credentials
+      template:
+        src: templates/aws-credentials.j2
+        dest: ~/.aws/credentials
+      become: yes
+    - name: Set AWS config
+      template:
+        src: templates/aws-config.j2
+        dest: ~/.aws/config
+      become: yes
   when: build == 'aws'
 
 - name: Create kops cluster configuration
-  shell: "kops create cluster -f {{ cluster_build_file }} --out . --target terraform"
+  shell: |
+    kops create cluster \
+    --name kops-{{ build }}-cluster.chaseweyer.com \
+    --state {{ bucket }} \
+    --dns-zone kops-{{ build }}-cluster.chaseweyer.com \
+    --zones us-east-2a --networking calico \
+    --ssh-public-key ~/.ssh/kops.pub \
+    --image '{{ image }}' \
+    --node-count 3 \
+    --out . \
+    --target terraform

@@ -4,6 +4,9 @@
     zone: "{{ subdomain }}"
   register: kops_subdomain_check
 
+- debug:
+    var: kops_subdomain_check
+
 - name: Create Route53 hosted zone if it doesn't exist
   route53:
     state: present
@@ -50,7 +53,7 @@
 
 - name: Create s3 bucket to store kops state
   s3_bucket:
-    name: "kops-{{ build }}-cpw-cluster-state"
+    name: "kops-{{ build }}-cluster-state-cpw"
     state: present
     versioning: yes
     encryption: AES256

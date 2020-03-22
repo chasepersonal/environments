@@ -3,6 +3,7 @@
     - name: AWS - Import AWS credentials
       include_vars:
         file: ../vars/aws/kops-creds.yml
+      when: build == 'aws'
         
     - name: Import kops role to prep cluster
       import_role:
