@@ -3,9 +3,9 @@
     - name: Set image to be used
       set_fact:
         image: 125523088429/fedora-coreos-31.20200223.3.0-hvm
-    - name: Set bucket location
+    - name: Set networking
       set_fact:
-        kops_state_bucket: s3://kops-aws-cluster-state-cpw
+        networking: calico
     - name: Set AWS credentials
       template:
         src: templates/aws-credentials.j2
@@ -18,20 +18,12 @@
       become: yes
   when: build == 'aws'
 
-- name: Generate ssh key pair for kops
+- name: Check if kops ssh key pair exists
+  stat:
+    path: ~/.ssh/kops
+  register: ssh_keypair_status
+
+- name: Generate ssh key pair for kops if it doesn't exist
   openssh_keypair:
     path: ~/.ssh/kops
-
-- name: Create kops cluster configuration
-  shell: |
-    kops create cluster \
-    --name kops-{{ build }}-cluster.chaseweyer.com \
-    --state {{ kops_state_bucket }} \
-    --dns-zone kops-{{ build }}-cluster.chaseweyer.com \
-    --zones us-east-2a \
-    --networking calico \
-    --ssh-public-key ~/.ssh/kops.pub \
-    --image '{{ image }}' \
-    --node-count 3 \
-    --out . \
-    --target terraform
+  when: ssh_keypair_status.stat.exists == False
