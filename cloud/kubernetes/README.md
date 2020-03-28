@@ -69,3 +69,5 @@ https://www.terraform.io/docs/index.html
 https://medium.com/@fdeantoni/running-rook-with-k3s-5e2c79159eaf
 
 https://blog.raveland.org/post/raspian_ceph_en/
+
+https://github.com/BenchLabs/blog-k8s-kops-terraform/blob/master/terraform/main.tf

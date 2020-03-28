@@ -1,14 +1,26 @@
 - name: Check if terraform has been initialized
   stat:
-    path: /environment/cloud/kubernetes/.terraform
+    path: $HOME/terraform/.terraform
   register: terraform_init
 
 - name: Initialize terraform if it hasn't been already
   shell: terraform init
   when: terraform_init.stat.exists == False
+  args:
+    chdir: $HOME/terraform
+
+- name: Set workspace if needed
+  shell: "terraform workspace select {{ workspace }}"
+  args:
+    chdir: $HOME/terraform
+  when: env == 'kops'
 
 - name: Run terraform plan and create a plan file
   shell: terraform plan -out={{ tf_plan_name }}.tfplan
+  args:
+    chdir: $HOME/terraform
 
 - name: Run terraform apply from plan file
   shell: terraform apply "{{ tf_plan_name }}.tfplan"
+  args:
+    chdir: $HOME/terraform

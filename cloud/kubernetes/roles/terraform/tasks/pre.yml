@@ -1,0 +1,4 @@
+- name: Create terraform folder
+  file:
+    path: $HOME/terraform
+    state: directory
