@@ -1,4 +1,10 @@
-- name: Create terraform folder
+- name: Check if terraform folder exists
+  stat:
+    path: $HOME/terraform
+  register: terraform_folder_status
+
+- name: Create terraform folder if it doesn't exist
   file:
     path: $HOME/terraform
     state: directory
+  when: terraform_folder_status.stat.exists == False
