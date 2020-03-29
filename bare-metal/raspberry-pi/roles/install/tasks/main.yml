@@ -1,9 +1,16 @@
+- name: Import steps to configure network
+  include_tasks: network.yml
+  tags: network
+
 - name: Import steps to configure new USB storage
   include_tasks: storage.yml
+  tags: storage
 
 - name: Import steps to install and update necessary packages
   include_tasks: packages.yml
+  tags: packages
 
 - name: Import master-setup if machine is a master
   include_tasks: master-setup.yml
   when: ansible_nodename in groups['master']
+  tags: master

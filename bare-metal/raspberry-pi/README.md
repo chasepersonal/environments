@@ -19,6 +19,7 @@ The following playbook can be run to perform the following operations on the Ras
     * this will ensure all nodes have the necessary packages daily and they are updated in a timely manner
 
 `ansible-playbook -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml`
+
 ## References
 
 The following articles were referenced during the creation of this directory:
