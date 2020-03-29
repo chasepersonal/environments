@@ -1,9 +1,6 @@
 - name: Import steps to configure new USB storage
   include_tasks: storage.yml
 
-- name: Import steps to configure networking
-  include_tasks: network.yml
-
 - name: Import steps to install and update necessary packages
   include_tasks: packages.yml
 
