@@ -4,7 +4,7 @@
     state: present
     update_cache: yes
   become: yes
-  when: ansible_hostname in groups['master']
+  when: ansible_hostname == 'k3s-m-0'
 
 - name: Install rbd pi compatible package
   apt:
