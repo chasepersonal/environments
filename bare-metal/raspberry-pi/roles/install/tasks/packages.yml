@@ -1,0 +1,38 @@
+- name: Install Ansible on master(s)
+  apt:
+    name: ansible
+    state: present
+    update_cache: yes
+  become: yes
+  when: ansible_hostname == 'k3s-m-0'
+
+- name: Install rbd pi compatible package
+  apt:
+    name: rbd-nbd
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Update packages to the latest
+  apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+  become: yes
+  register: package_updates
+
+- name: Reboot machine if packages were updated
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  when: package_updates is changed
+  become: yes
+
+- name: Wait for reboot to complete if machine was rebooted
+  wait_for_connection:
+    connect_timeout: 30
+    sleep: 5
+    delay: 5
+    timeout: 600
+  when: package_updates is changed
+

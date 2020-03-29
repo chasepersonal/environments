@@ -1,0 +1,25 @@
+- name: Create ansible-jobs directory
+  file:
+    path: /home/pi/ansible-jobs
+    state: directory
+
+- name: Copy over weekly update script and inventory
+  copy:
+    src: files/master
+    dest: /home/pi/ansible-jobs
+
+- name: Copy private key for ansible
+  copy:
+    src: ~/.ssh/pi_key
+    dest: /home/pi/.ssh/pi_key
+
+- name: Move ansible configuration to /etc/ansible
+  shell: mv /home/pi/ansible-jobs/master/ansible.cfg /etc/ansible/ansible.cfg
+  become: yes
+
+- name: Install crontab on master to do daily updates
+  cron:
+    name: "Nightly Package Check"
+    minute: "0"
+    hour: "0"
+    job: "ansible-playbook -i /home/pi/ansible-jobs/master/inventory /home/pi/ansible-jobs/master/package-check.yml"

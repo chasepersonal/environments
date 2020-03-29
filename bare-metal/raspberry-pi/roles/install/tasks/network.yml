@@ -1,0 +1,33 @@
+- name: Move over dhcpcd.conf with static ip's to appropriate remotes
+  template:
+    src: templates/dhcpcd.conf.j2
+    dest: /etc/dhcpcd.conf
+  become: yes
+
+- name: Restart the dhcpcd service to take in new configuration
+  systemd:
+    name: dhcpcd
+    state: restarted
+    daemon_reload: yes
+  become: yes
+
+- name: Reboot machine for static ip to be set
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  become: yes
+
+- name: Update inventory with new ip addr to find
+  template:
+    src: templates/inventory.j2
+    dest: ../inventory/inventory
+
+- name: Refresh the inventory to apply new changes
+  meta: refresh_inventory
+  
+- name: Wait for reboot to complete
+  wait_for_connection:
+    connect_timeout: 30
+    sleep: 5
+    delay: 5
+    timeout: 600

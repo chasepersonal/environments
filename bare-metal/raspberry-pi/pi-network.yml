@@ -1,0 +1,8 @@
+---
+- hosts: all
+  remote_user: pi
+  tasks:
+    - name: Import steps to configure new USB storage
+      include_role:
+        name: install
+        tasks_from: network

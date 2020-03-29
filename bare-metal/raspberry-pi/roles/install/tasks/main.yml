@@ -1,0 +1,16 @@
+- name: Import steps to configure network
+  import_tasks: network.yml
+  tags: network
+
+- name: Import steps to configure new USB storage
+  import_tasks: storage.yml
+  tags: storage
+
+- name: Import steps to install and update necessary packages
+  import_tasks: packages.yml
+  tags: packages
+
+- name: Import master-setup if machine is a master
+  import_tasks: master-setup.yml
+  when: ansible_nodename == 'k3s-m-0'
+  tags: master
