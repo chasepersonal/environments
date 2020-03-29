@@ -8,6 +8,10 @@
     path: files/master
     dest: /home/pi/ansible-jobs
 
+- name: Move ansible configuration to /etc/ansible
+  shell: mv /home/pi/ansible-jobs/ansible.cfg /etc/ansible/ansible.cfg
+  become: yes
+
 - name: Install crontab on master to do daily updates
   cron:
     name: "Nightly Package Check"
