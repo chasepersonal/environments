@@ -18,7 +18,7 @@ The following playbook can be run to perform the following operations on the Ras
 * Ensure master has the package check crontab
     * this will ensure all nodes have the necessary packages daily and they are updated in a timely manner
 
-`ansible-playbook -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml`
+`ansible-playbook --private-key ~/.ssh/pi_key -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml`
 
 ## References
 
