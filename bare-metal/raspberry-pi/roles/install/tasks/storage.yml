@@ -6,7 +6,7 @@
 - name: Partion new drive is USB storage doesn't exist
   block:
     - name: Partition new book disk
-      shell: echo -e "n\np\n1\n\n\nw" | fdisk /dev/sdb
+      shell: echo -e "n\np\n1\n\n\nw" | fdisk /dev/sda
       args:
         executable: /bin/bash
       become: yes
