@@ -3,6 +3,7 @@
     name: ansible
     state: present
     update_cache: yes
+  become: yes
   when: ansible_hostname in groups['master']
 
 - name: Install rbd pi compatible package
@@ -10,12 +11,14 @@
     name: rbd-nbd
     state: present
     update_cache: yes
+  become: yes
 
 - name: Update packages to the latest
   apt:
     name: "*"
     state: latest
     update_cache: yes
+  become: yes
   register: package_updates
 
 - name: Reboot machine if packages were updated
