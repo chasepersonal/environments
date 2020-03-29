@@ -20,6 +20,25 @@ The following playbook can be run to perform the following operations on the Ras
 
 `ansible-playbook --private-key ~/.ssh/pi_key -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml`
 
+### Tags
+
+With how the install playbook is constructed, the install role has been divided into tags depending on the type of install:
+
+* Network: Steps pertaining to network setup
+* Storage: Steps pertaining to adding additional storage
+* Packages: Steps pertaining to updating and adding packages
+* Master: Steps pertaining to just the master machine (ex: ansible, cronjob setup)
+
+These tags can either be applied with `--tags` or applied with `--skip-tags` depending on which you would prefer to use.
+
+Tags usage:
+
+`ansible-playbook --private-key ~/.ssh/pi_key -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml --tags "storage,master"`
+
+Skip Tags usage:
+
+`ansible-playbook --private-key ~/.ssh/pi_key -i /bare-metal/raspberry-pi/inventory/inventory /bare-metal/raspberry-pi/pi-prep.yml --skip-tags "network"`
+
 ## References
 
 The following articles were referenced during the creation of this directory:

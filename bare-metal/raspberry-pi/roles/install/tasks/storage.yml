@@ -1,17 +1,17 @@
 - name: Check if /dev/sda drive exists
-  shell: fdisk -l
-  register: fdisk_output
+  shell: mount | awk '/sda1/'
+  register: mount_output
   become: yes
 
 - name: Partion new drive is USB storage doesn't exist
   block:
-    - name: Partition new book disk
+    - name: Partition new boot disk
       shell: echo -e "n\np\n1\n\n\nw" | fdisk /dev/sda
       args:
         executable: /bin/bash
       become: yes
 
-    - name: Partition disk as ext4
+    - name: Format disk as ext4
       filesystem:
         fstype: ext4
         dev: /dev/sda1
@@ -19,42 +19,35 @@
 
     - name: Create new directory for boot drive
       file:
+        src: /dev/sda1
         path: /media/bootdrive
         state: directory
       become: yes
 
-    - name: Mount new drive onto the new directory
-      mount:
-        path: /media/bootdrive
-        state: mounted
+    - name: Temporarily mount new partition to new directory
+      shell: mount /dev/sda1 /media/bootdrive
       become: yes
 
     - name: Copy root folder from MicroSD to new USB drive
       shell: rsync -avx / /media/bootdrive
       become: yes
 
-    - name: Mark new drive as the root drive
-      lineinfile:
-        path: /boot/cmdline.txt
-        regexp: 'root=*'
-        line: root=/dev/sda
-      register: boot_changes
+    - name: Copy over new boot file
+      copy:
+        path: files/all/cmdline.txt
+        dest: /boot/cmdline.txt
       become: yes
-  when: fdisk_output.stdout.find('/dev/sda1') == -1
 
+    - name: Reboot machine if new drive was added
+      shell: "sleep 5 && reboot"
+      async: 1
+      poll: 0
+      become: yes
 
-- name: Reboot machine if new drive was added
-  shell: "sleep 5 && reboot"
-  async: 1
-  poll: 0
-  when: boot_changes is changed
-  become: yes
-  
-
-- name: Wait for reboot to complete if machine was rebooted
-  wait_for_connection:
-    connect_timeout: 30
-    sleep: 5
-    delay: 5
-    timeout: 600
-  when: boot_changes is changed
+    - name: Wait for reboot to complete if machine was rebooted
+      wait_for_connection:
+        connect_timeout: 30
+        sleep: 5
+        delay: 5
+        timeout: 900
+  when: mount_output.stdout.find('/dev/sda1') == -1
