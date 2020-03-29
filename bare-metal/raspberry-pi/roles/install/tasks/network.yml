@@ -1,0 +1,11 @@
+- name: Move over dhcpcd.conf with static ip's to appropriate remotes
+  template:
+    src: templates/dhcpcd.conf.j2
+    dest: /etc/dhcpcd.conf
+  become: yes
+
+- name: Restart the dhcpcd service to take in new configuration
+  systemd:
+    name: dhcpcd
+    state: restarted
+    daemon_reload: yes

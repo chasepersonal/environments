@@ -1,0 +1,22 @@
+---
+- hosts: all
+  remote_user: pi
+  tasks:
+    - name: Ensure Ansible is installed on the main machine
+      apt:
+        name: ansible
+        state: present
+        update_cache: yes
+      when: ansible_hostname in groups['master']
+    
+    - name: Ensure storage package is installed
+      apt:
+        name: rbd-nbd
+        state: present
+        update_cache: yes
+
+    - name: Update packages
+      apt:
+        name: "*"
+        state: latest
+        update_cache: yes

@@ -1,0 +1,16 @@
+- name: Create ansible-jobs directory
+  file:
+    path: /home/pi/ansible-jobs
+    state: directory
+
+- name: Copy over weekly update script and inventory
+  copy:
+    path: files/master
+    dest: /home/pi/ansible-jobs
+
+- name: Install crontab on master to do daily updates
+  cron:
+    name: "Nightly Package Check"
+    minute: "0"
+    hour: "0"
+    job: "ansible-playbook -i /home/pi/ansible-jobs/inventory /home/pi/ansible-jobs/package-check.yml"

@@ -1,0 +1,6 @@
+[master]
+k3s-m-0
+
+[sub]
+k3s-w-0
+k3s-w-1

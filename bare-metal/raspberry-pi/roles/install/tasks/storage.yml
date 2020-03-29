@@ -1,0 +1,54 @@
+- name: Check if /dev/sda drive exists
+  shell: fdisk -l
+  register: fdisk_output
+
+- name: Partion new drive is USB storage doesn't exist
+  block:
+    - name: Partition new book disk
+      shell: echo -e "n\np\n1\n\n\nw" | fdisk /dev/sdb
+      args:
+        executable: /bin/bash
+      become: yes
+
+    - name: Partition disk as ext4
+      shell: mkfs.ext4 /dev/sda1
+      become: yes
+
+    - name: Create new directory for boot drive
+      file:
+        path: /media/bootdrive
+        state: directory
+
+    - name: Mount new drive onto the new directory
+      mount:
+        path: /media/bootdrive
+        state: mounted
+      become: yes
+
+    - name: Copy root folder from MicroSD to new USB drive
+      shell: rsync -avx / /media/bootdrive
+      become: yes
+
+    - name: Mark new drive as the root drive
+      lineinfile:
+        path: /boot/cmdline.txt
+        regexp: 'root=*'
+        line: root=/dev/sda
+      register: boot_changes
+      become: yes
+  when: fdisk_output.stdout.find('/dev/sda1') == -1
+
+- name: Reboot machine if new drive was added
+  shell: "sleep 5 && reboot"
+  async: 1
+  poll: 0
+  when: boot_changes is changed
+  become: yes
+
+- name: Wait for reboot to complete if machine was rebooted
+  wait_for_connection:
+    connect_timeout: 30
+    sleep: 5
+    delay: 5
+    timeout: 600
+  when: boot_changes is changed
