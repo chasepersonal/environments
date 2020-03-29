@@ -43,11 +43,11 @@ slaac private
 
 # Example static IP configuration:
 interface eth0
-{% if ansible_hostname == '192.168.0.40' %}
+{% if ansible_hostname == 'k3s-m-0' %}
 static ip_address={{ first_master_eth_static_ip }}/24
-{% elif ansible_hostname == '192.168.0.20' %}
+{% elif ansible_hostname == 'k3s-w-0' %}
 static ip_address={{ first_worker_eth_static_ip }}/24
-{% elif ansible_hostname == '192.168.0.16' %}
+{% elif ansible_hostname == 'k3s-w-1' %}
 static ip_address={{ second_worker_eth_static_ip }}/24
 {% endif %}
 #static ip6_address=fd51:42f8:caae:d92e::ff/64
@@ -55,11 +55,11 @@ static routers=192.168.0.1
 static domain_name_servers=1.1.1.1
 
 interface wlan0
-{% if ansible_hostname == '192.168.0.40' %}
+{% if ansible_hostname == 'k3s-m-0' %}
 static ip_address={{ first_master_wifi_static_ip }}/24
-{% elif ansible_hostname == '192.168.0.20' %}
+{% elif ansible_hostname == 'k3s-w-0' %}
 static ip_address={{ first_worker_wifi_static_ip }}/24
-{% elif ansible_hostname == '192.168.0.16' %}
+{% elif ansible_hostname == 'k3s-w-1' %}
 static ip_address={{ second_worker_wifi_static_ip }}/24
 {% endif %}
 static routers=192.168.0.1
