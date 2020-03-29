@@ -1,6 +1,8 @@
 - name: Check if /dev/sda drive exists
   shell: fdisk -l
   register: fdisk_output
+  args:
+    executable: /bin/bash
 
 - name: Partion new drive is USB storage doesn't exist
   block:
@@ -38,12 +40,14 @@
       become: yes
   when: fdisk_output.stdout.find('/dev/sda1') == -1
 
+
 - name: Reboot machine if new drive was added
   shell: "sleep 5 && reboot"
   async: 1
   poll: 0
   when: boot_changes is changed
   become: yes
+  
 
 - name: Wait for reboot to complete if machine was rebooted
   wait_for_connection:
