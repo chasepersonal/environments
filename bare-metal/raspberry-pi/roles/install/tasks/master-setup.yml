@@ -5,7 +5,7 @@
 
 - name: Copy over weekly update script and inventory
   copy:
-    path: files/master
+    src: files/master
     dest: /home/pi/ansible-jobs
 
 - name: Move ansible configuration to /etc/ansible
