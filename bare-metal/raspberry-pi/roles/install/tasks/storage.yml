@@ -1,8 +1,7 @@
 - name: Check if /dev/sda drive exists
   shell: fdisk -l
   register: fdisk_output
-  args:
-    executable: /bin/bash
+  become: yes
 
 - name: Partion new drive is USB storage doesn't exist
   block:
@@ -13,13 +12,16 @@
       become: yes
 
     - name: Partition disk as ext4
-      shell: mkfs.ext4 /dev/sda1
+      filesystem:
+        fstype: ext4
+        dev: /dev/sda1
       become: yes
 
     - name: Create new directory for boot drive
       file:
         path: /media/bootdrive
         state: directory
+      become: yes
 
     - name: Mount new drive onto the new directory
       mount:
