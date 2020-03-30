@@ -1,0 +1,21 @@
+- name: Check on terraform folder status
+  import_tasks: pre.yml
+
+- name: Move MetalLB terraform files to the terraform folder
+  template:
+    src: templates/helm/metallb/metallb.tf.j2
+    dest: $HOME/terraform/metallb.tf
+
+- name: Move MetalLB values file to the terraform folder
+  file:
+    src: files/helm/values/metallb/values.yaml
+    des: $HOME/terraform/values.yaml
+    
+- name: Import main terraform steps
+  import_tasks: main.yml
+  vars:
+    tf_plan_name: helm-metallb
+    workspace: helm-metallb
+
+- name: Run post terraform steps
+  import_tasks: post.yml

@@ -1,0 +1,45 @@
+- name: Download Cert-Manager authorization header files
+  shell: shell: kubectl apply \
+  --validate=false \
+  -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+
+- name: Check on terraform folder status
+  import_tasks: pre.yml
+
+- name: Move Cert Manager terraform files to the terraform folder
+  template:
+    src: templates/helm/cert-manager/cert-manager.tf.j2
+    dest: $HOME/terraform/cert-manager.tf
+
+- name: Import main terraform steps
+  import_tasks: main.yml
+  vars:
+    tf_plan_name: helm-cert-manager
+    workspace: helm-cert-manager
+
+- name: Create the cloudflare secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'templates/helm/cert-manager/cloudflare-secret.yml.j2') }}"
+    validate:
+      fail_on_error: yes
+      
+- pause:
+    seconds: 15
+
+- name: Create ClusterIssuer for Let's Encrypt
+  k8s: 
+    state: present
+    definition: "{{ lookup('template', 'templates/helm/cert-manager/cluster-issuer.yml.j2) }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create the cloudflare certificate to use with cert-manager
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'templates/helm/cert-manager/cloudflare-certificate.yml.j2) }}"
+    validate:
+      fail_on_error: yes
+
+- name: Run post terraform steps
+  import_tasks: post.yml

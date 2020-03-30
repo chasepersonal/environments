@@ -1,0 +1,6 @@
+- name: AWS - Import resources configuration
+  import_tasks: aws-resources-configuration.yml
+  when: build == 'aws'
+
+- name: Import build steps
+  import_tasks: build.yml

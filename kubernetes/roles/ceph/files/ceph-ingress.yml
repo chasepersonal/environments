@@ -4,14 +4,14 @@ metadata:
   name: rook-ceph-mgr-dashboard
   namespace: rook-ceph
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: "contour"
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   tls:
    - hosts:
      - ceph-dash.chaseweyer.com
-     secretName: cloudflare-cert-prod
+     secretName: cf-le-prod
   rules:
   - host: ceph-dash.chaseweyer.com
     http:

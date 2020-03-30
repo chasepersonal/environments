@@ -1,0 +1,7 @@
+locals {
+  kops_cluster_name = "{{ cluster_name }}"
+  kops_state_bucket = "{{ kops_state_bucket }}"
+  tags = {
+    terrafrom = "true"
+  }
+}

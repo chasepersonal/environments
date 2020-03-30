@@ -1,3 +1,13 @@
+- name: Set Ceph build file for Cloud deploy
+  set_fact:
+    build_file: files/ceph-cluster-aws.yml
+  when: build == 'aws' or build == 'do'
+
+- name: Set Ceph build file for Raspberry PI deploy
+  set_fact:
+    build_file: files/ceph-cluster-pi.yml
+  when: build == 'pi'
+
 - name: Install Common components
   shell: kubectl apply -f https://raw.githubusercontent.com/rook/rook/blob/release-1.2/cluster/examples/kubernetes/ceph/common.yaml
 

@@ -1,0 +1,64 @@
+- name: Set bucket name for Terraform state s3 bucket
+  set_fact:
+    bucket: "kops-{{ build }}-cpw-cluster-state"
+
+- name: Set env for s3 bucket
+  set_fact:
+    env: kops
+
+- name: Import terraform pre steps
+  include_tasks: pre.yml
+
+- name: Copy over the s3 backend configuration file (Network)
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: $HOME/terraform/s3-backend.tf
+  when: build == 'aws'
+  vars:
+    workspace: "{{ build }}-kops-network"
+
+- name: Copy over the main configuration file
+  template:
+    src: templates/kops/main.tf.j2
+    dest: $HOME/terraform/main.tf
+
+- name: Copy over the remaining configuration files
+  copy:
+    src: files/kops/aws/build-files
+    dest: $HOME/terraform
+
+- name: Import terrform steps to do the terraform build
+  include_tasks: main.yml
+  vars:
+    tf_plan_name: "{{ build }}-kops-network"
+
+- name: Remove all previous files except for outputs.tf and create-kops-cluster.sh
+  shell: rm -v !("outputs.tf"|"create-kops-cluster.sh")
+  args:
+    chdir: $HOME/terraform
+
+- name: Remove previously initiated terraform instance
+  file:
+    path: $HOME/terraform/.terraform
+    state: absent
+    
+- name: Copy over the s3 backend configuration file (Cluster)
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: $HOME/terraform/s3-backend.tf
+  when: build == 'aws'
+  vars:
+    workspace: "{{ build }}-kops-cluster"
+
+- name: Create kops cluster
+  shell: ./create-kops-cluster.sh
+  args:
+    chdir: $HOME/terraform
+
+- name: Import terraform steps to do the terraform build
+  include_tasks: main.yml
+  vars:
+    tf_plan_name: "{{ build }}-kops-cluster"
+
+- name: Import post terraform steps
+  include_tasks: post.yml

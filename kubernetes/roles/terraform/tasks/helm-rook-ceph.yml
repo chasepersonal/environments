@@ -1,0 +1,63 @@
+- name: Check on terraform folder status
+  import_tasks: pre.yml
+
+- name: Move Rook-Ceph terraform files to the terraform folder
+  template:
+    src: templates/helm/rook-ceph/rook-ceph.tf.j2
+    dest: $HOME/terraform/rook-ceph.tf
+    
+- name: Import main terraform steps
+  import_tasks: main.yml
+  vars:
+    tf_plan_name: helm-rook-ceph
+    workspace: helm-rook-ceph
+
+- name: Create Pi Ceph Cluster
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-cluster-pi.yml') }}"
+    validate:
+      fail_on_error: yes
+  when: build == 'pi'
+
+- name: Create Ceph block storage class
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/blockstorageclass.yml') }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create Ceph Object Storage Definition
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-object-store.yml') }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create Ceph object storage class
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-object-sc.yml') }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create Ceph Ingress for Ceph Dashboard
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-ingress.yml') }}"
+    validate:
+      fail_on_error: yes
+      
+- name: Check storage classes
+  shell: kubectl get sc
+  register: sc_status
+
+- name: If local storage exists, remove it as the default
+  shell: "kubectl patch sc local-path -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'"
+  when: sc_status.stdout.find('local-path') != -1
+
+- name: Make block storage the default class
+  shell: "kubectl patch sc rook-ceph-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'"
+
+- name: Run post terraform steps
+  import_tasks: post.yml

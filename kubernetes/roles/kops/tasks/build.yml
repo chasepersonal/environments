@@ -1,0 +1,29 @@
+- name: AWS - Set Bucket, Image, and Configure CLI
+  block:
+    - name: Set image to be used
+      set_fact:
+        image: 125523088429/fedora-coreos-31.20200223.3.0-hvm
+    - name: Set networking
+      set_fact:
+        networking: calico
+    - name: Set AWS credentials
+      template:
+        src: templates/aws-credentials.j2
+        dest: ~/.aws/credentials
+      become: yes
+    - name: Set AWS config
+      template:
+        src: templates/aws-config.j2
+        dest: ~/.aws/config
+      become: yes
+  when: build == 'aws'
+
+- name: Check if kops ssh key pair exists
+  stat:
+    path: ~/.ssh/kops
+  register: ssh_keypair_status
+
+- name: Generate ssh key pair for kops if it doesn't exist
+  openssh_keypair:
+    path: ~/.ssh/kops
+  when: ssh_keypair_status.stat.exists == False

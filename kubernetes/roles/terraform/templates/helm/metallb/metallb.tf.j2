@@ -1,0 +1,24 @@
+provider "helm" {
+  version        = "{{ helm_version }}"
+}
+
+{% if build == 'aws' or build == 'pi' %}
+terraform {
+  backend "s3" {
+    bucket                = "{{ bucket }}"
+    key                   = "terraform/terraform.tfstate"
+    region                = "{{ region }}"
+    workspace_key_prefix  = "helm-metallb"
+  }
+}
+{% endif %}
+
+resource "helm_release" "metal_lb" {
+  name  = "metallb"
+  chart = "stable/metallb"
+  namespace = "kube-system"
+
+  values = [
+    "${file("./values/metallb/values.yaml")}"
+  ]
+}

@@ -1,0 +1,3 @@
+---
+- import_playbook: plays/kops-build.yml
+- import_playbook: plays/deploy-k8s-resources.yml

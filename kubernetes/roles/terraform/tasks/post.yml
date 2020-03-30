@@ -1,0 +1,4 @@
+- name: Remove terraform folder
+  file:
+    path: $HOME/terraform
+    state: absent

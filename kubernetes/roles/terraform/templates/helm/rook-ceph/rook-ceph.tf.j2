@@ -1,0 +1,25 @@
+provider "helm" {
+  version        = "{{ helm_version }}"
+}
+
+{% if build == 'aws' or build == 'pi' %}
+terraform {
+  backend "s3" {
+    bucket                = "{{ bucket }}"
+    key                   = "terraform/terraform.tfstate"
+    region                = "{{ region }}"
+    workspace_key_prefix  = "helm-rook-ceph"
+  }
+}
+{% endif %}
+
+data "helm_repository" "rook_ceph_repo" {
+  name = "rook-release"
+  url  = "https://charts.rook.io/release"
+}
+
+resource "helm_release" "rook_ceph" {
+  name  = "rook-ceph"
+  chart = "rook-release/rook-ceph"
+  namespace = "rook-ceph"
+}

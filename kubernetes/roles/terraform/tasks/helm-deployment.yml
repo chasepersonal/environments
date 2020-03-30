@@ -1,0 +1,31 @@
+- name: Import helm cert-manager terraform deployment
+  import_tasks: helm-cert-manager.yml
+  tags: 
+    - network
+    - cert-manager
+
+- name: Import helm contour terraform deployment
+  import_tasks: helm-contour.yml
+  tags:
+    - network
+    - contour
+
+- name: Import MetalLB terraform deployment
+  import_tasks: helm-metallb.yml
+  when: build == 'pi'
+  tags:
+    - network
+    - bare-metal-lb
+
+- name: Import Rook-Ceph steps
+  import_tasks: helm-rook-ceph.yml
+  tags:
+    - storage
+    - rook-ceph
+
+- name: Import Harbor steps
+  import_tasks: helm-harbor.yml
+  when: build == 'pi'
+  tags:
+    - registry
+    - harbor
