@@ -8,5 +8,5 @@ ansible-playbook \
 --vault-id aws@prompt \
 --vault-id k3s@prompt \
 --vault-id harbor@prompt \
-deploy-k3s-do.yml \
+deploy-k3s.yml \
 --extra-vars="user=dev"

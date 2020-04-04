@@ -1,0 +1,17 @@
+- name: Import variables for pi build
+  include_vars:
+    dir: ../vars/pi
+  when: build == 'vars'
+
+- name: Import variables for Digital Ocean build
+  block:
+    - include_vars:
+        dir: ../vars/do
+    - include_vars:
+        dir: ../vars/user
+  when: build == 'do'
+
+- name: Import variables for AWS build
+  include_vars:
+    dir: ../vars/aws-ec2
+  when: build == 'aws'

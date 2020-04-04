@@ -1,10 +1,16 @@
 - hosts: localhost
   tasks:
+    - name: Include main k3s vars
+      include_vars:
+        dir: ../vars/k3s
+
+    - name: Include role for parsing build files
+      import_role: ../roles/import-build-vars
+      
     - name: Import Terraform deployment
       import_role:
         name: ../roles/terraform
-        tasks_from: k3s
-      when: build == 'do' or build == 'aws'
+      when: build != 'pi'
       
 - hosts: master
   remote_user: "{{ user }}"

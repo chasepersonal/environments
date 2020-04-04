@@ -7,47 +7,31 @@
     dir: 'vars/do'
   when: build == 'do'
 
-- name: Set varaible folder location
+- name: Import steps for terraform state bucket configuration
+  import_tasks: bucket-config.yml
+
+- name: Set terraform build folder
   set_fact:
-    variable_folder: "k3s-{{ build }}"
+    terraform_build_folder: "files/k3s-{{ build }}/"
 
-- name: Move vars template to main folder
-  template:
-    src: templates/{{ variable_folder }}terraform.tfvars.j2
-    dest: ../../../kubernetes/terraform.tfvars
-
-- name: Set bucket name for Terraform state s3 bucket
-  set_fact:
-    bucket: "k3s-{{ build }}-cpw-cluster-state"
-
-- name: Ensure an s3 bucket exists to store the Terraform state in
-  s3_bucket:
-    name: "k3s-{{ build }}-cpw-cluster-state"
-    state: present
-    versioning: yes
-    encryption: AES256
-    region: us-east-2
+- name: Import terraform pre steps
+  import_tasks: pre.yml
 
 - name: Copy over the s3 backend configuration file
   template:
     src: templates/s3-backend/s3-backend.tf.j2
-    dest: ../../../kubernetes/s3-backend.tf
-
-- name: Set terraform build file
-  set_fact:
-    terraform_build_file: "files/k3s-{{ build }}/"
-
-- name: Generate name for the Terraform plan file
-  set_fact:
-    tf_plan_name: "{{ build }}-k3s"
+    dest: $HOME/terraform/s3-backend.tf
 
 - name: Move terraform files to main folder
-  copy:
-    src: "{{ terraform_build_file }}"
-    dest: ../../../kubernetes
+  template:
+    src: "{{ terraform_build_folder }}"
+    dest: $HOME/terraform
 
 - name: Import main terraform steps
-  tasks_from: main.yml
+  import_tasks: build.yml
+  vars:
+    tf_plan_name: "{{ build }}-k3s-cluster"
+    workspace: "{{ build }}-k3s-cluster"
 
 - name: Get master ip's
   shell: terraform output | grep m | awk '{ print $3 }'
@@ -70,4 +54,7 @@
   with_items: "{{ worker_ips.stdout_lines }}"
 
 - pause:
-    seconds: 15
+      seconds: 15
+    
+- name: Import post steps for terraform
+  import_tasks: post.yml

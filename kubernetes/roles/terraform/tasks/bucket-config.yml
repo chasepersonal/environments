@@ -1,0 +1,12 @@
+- name: Ensure an s3 bucket exists to store the Terraform state in
+  s3_bucket:
+    name: "k3s-{{ build }}-cpw-cluster-state"
+    state: present
+    versioning: yes
+    encryption: AES256
+    region: us-east-2
+  when: build == 'aws' or build == 'do' or build == 'pi'
+  
+- name: Set bucket name
+  set_fact:
+    bucket: "k3s-{{ build }}-cpw-cluster-state"

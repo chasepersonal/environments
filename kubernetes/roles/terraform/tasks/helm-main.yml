@@ -1,0 +1,29 @@
+- name: Check on terraform folder status
+  import_tasks: pre.yml
+
+- name: Copy over the s3 backend configuration file
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: $HOME/terraform/s3-backend.tf
+    
+- name: Move Contour terraform files to the terraform folder
+  template:
+    src: templates/helm/{{ package }}/{{ package }}.tf.j2
+    dest: $HOME/terraform/{{ package }}.tf
+  tags: "{{ package }}-terraform-files"
+
+- name: Import values file if deployment needs it
+  template:
+    src: templates/helm/values/{{ package }}/values.yaml.j2
+    dest: $HOME/terraform/values.yaml
+  tags: "{{ package }}-terraform-files"
+  when: values_file != 'n/a'
+
+- name: Import main terraform steps
+  import_tasks: main.yml
+  vars:
+    tf_plan_name: helm-{{ package }}
+    workspace: helm-{{ package }}
+
+- name: Run post terraform steps
+  import_tasks: post.yml

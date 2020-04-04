@@ -7,15 +7,13 @@
     env: kops
 
 - name: Import terraform pre steps
-  include_tasks: pre.yml
+  import_tasks: pre.yml
 
-- name: Copy over the s3 backend configuration file (Network)
+- name: Copy over the s3 backend configuration file
   template:
     src: templates/s3-backend/s3-backend.tf.j2
     dest: $HOME/terraform/s3-backend.tf
   when: build == 'aws'
-  vars:
-    workspace: "{{ build }}-kops-network"
 
 - name: Copy over the main configuration file
   template:
@@ -24,13 +22,14 @@
 
 - name: Copy over the remaining configuration files
   copy:
-    src: files/kops/aws/build-files
+    src: "files/kops/{{ build }}/build-files"
     dest: $HOME/terraform
 
 - name: Import terrform steps to do the terraform build
-  include_tasks: main.yml
+  import_tasks: build.yml
   vars:
-    tf_plan_name: "{{ build }}-kops-network"
+    tf_plan_name: "{{ build }}-kops-cluster"
+    workspace: "{{ build }}-kops-cluster"
 
 - name: Remove all previous files except for outputs.tf and create-kops-cluster.sh
   shell: rm -v !("outputs.tf"|"create-kops-cluster.sh")
@@ -47,8 +46,6 @@
     src: templates/s3-backend/s3-backend.tf.j2
     dest: $HOME/terraform/s3-backend.tf
   when: build == 'aws'
-  vars:
-    workspace: "{{ build }}-kops-cluster"
 
 - name: Create kops cluster
   shell: ./create-kops-cluster.sh
@@ -56,9 +53,10 @@
     chdir: $HOME/terraform
 
 - name: Import terraform steps to do the terraform build
-  include_tasks: main.yml
+  import_tasks: build.yml
   vars:
     tf_plan_name: "{{ build }}-kops-cluster"
+    workspace: "{{ build }}-kops-cluster"
 
 - name: Import post terraform steps
-  include_tasks: post.yml
+  import_tasks: post.yml

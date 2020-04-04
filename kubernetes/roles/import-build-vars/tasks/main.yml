@@ -1,0 +1,3 @@
+- name: Import variables for k3s builds
+  import_tasks: k3s.yml
+  when: cluster_type = 'k3s'

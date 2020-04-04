@@ -3,8 +3,6 @@ terraform {
     bucket                = "{{ bucket }}"
     key                   = "terraform/terraform.tfstate"
     region                = "us-east-2"
-    {% if env == 'kops'%}
     workspace_key_prefix  = "{{ workspace }}"
-    {% endif %}
   }
 }
