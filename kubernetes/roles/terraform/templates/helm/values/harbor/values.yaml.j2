@@ -132,7 +132,7 @@ expose:
     #     size: 20Gi
       jobservice:
         existingClaim: ""
-        storageClass: ""
+        storageClass: "{{ storage_class }}"
         subPath: ""
         accessMode: ReadWriteOnce
         size: 5Gi
@@ -140,7 +140,7 @@ expose:
       # be ignored
       database:
         existingClaim: ""
-        storageClass: ""
+        storageClass: "{{ storage_class }}"
         subPath: ""
         accessMode: ReadWriteOnce
         size: 5Gi
@@ -148,13 +148,13 @@ expose:
       # be ignored
       redis:
         existingClaim: ""
-        storageClass: ""
+        storageClass: "{{ storage_class }}"
         subPath: ""
         accessMode: ReadWriteOnce
         size: 5Gi
       trivy:
         existingClaim: ""
-        storageClass: ""
+        storageClass: "{{ storage_class }}"
         subPath: ""
         accessMode: ReadWriteOnce
         size: 5Gi
@@ -256,7 +256,7 @@ expose:
   logLevel: info
   
   # The initial password of Harbor admin. Change it from portal after launching Harbor
-  harborAdminPassword: "Harbor12345"
+  harborAdminPassword: "{{ harbor_pass }}"
   # The secret key used for encryption. Must be a string of 16 chars.
   #secretKey: "not-a-secure-key"
   
@@ -548,7 +548,7 @@ expose:
         repository: busybox
         tag: latest
       # The initial superuser password for internal database
-      password: "changeit"
+      password: "{{ db_pass }}"
       # resources:
       #  requests:
       #    memory: 256Mi
