@@ -1,7 +1,11 @@
+- name: Import varaibles for all k3s builds
+  include_vars:
+    dir: ../vars/k3s/main
+
 - name: Import variables for pi build
   include_vars:
-    dir: ../vars/pi
-  when: build == 'vars'
+    dir: ../vars/k3s/pi
+  when: build == 'pi'
 
 - name: Import variables for Digital Ocean build
   block:
@@ -13,5 +17,5 @@
 
 - name: Import variables for AWS build
   include_vars:
-    dir: ../vars/aws-ec2
+    dir: ../vars/k3s/aws
   when: build == 'aws'
