@@ -16,7 +16,7 @@ variable "vpc_cidr" {
 variable "kops_az" {
   description = "AWS availability zone for kops build"
   type = "list"
-  default = ["us-east-1a", "us-east-2b", "us-east-2c"]
+  default = ["us-east-2a", "us-east-2b", "us-east-2c"]
 }
 
 variable "private_subnet_cidrs" {

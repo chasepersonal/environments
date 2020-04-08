@@ -1,9 +1,9 @@
 - name: Cloud - Install k3s, make master unschedulable, and do not deploy traefik
-  shell: curl -sfL https://get.k3s.io | sh -s - server --node-taint key1=value1:NoExecute --no-deploy=traefik
+  shell: curl -sfL https://get.k3s.io | sh -s - server --node-taint key1=value1:NoExecute --no-deploy traefik
   when: build == 'aws' or build == 'do'
 
 - name: Bare Metal (PI) - Install k3s and do not deploy traefik
-  shell: curl -sfL https://get.k3s.io | sh -s - server --no-deploy=traefik
+  shell: curl -sfL https://get.k3s.io | sh -s - server --no-deploy traefik --no-deploy servicelb
   when: build == 'pi'
 
 - name: Add non-root user as owner of Rancher k3s config

@@ -13,55 +13,40 @@ resource "aws_key_pair" "k3s" {
   public_key = file("~/.ssh/k3s_aws.pub")
 }
 
-/* Define our vpc */
-resource "aws_vpc" "k3s" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
+/* Set up VPC with internet gateway */
+
+module "k3s_vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  name = var.vpc_name
+  cidr = var.vpc_cidr
+
+  azs             = var.azs
+  private_subnets = var.private_subnet_cidrs
+  public_subnets  = var.public_subnet_cidrs
+
+  enable_nat_gateway = true
+
   tags = {
-    Name = "k3s-vpc"
+    "kubernetes.io/cluster/k3s-aws-cpw-cluster"  = "shared"
+    "terraform"                                  = "true"
   }
-}
 
-/* Internet gateway for the public subnet */
-resource "aws_internet_gateway" "k3s" {
-  vpc_id = aws_vpc.k3s.id
-}
-
-/* Public subnet */
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.k3s.id
-  cidr_block              = var.public_subnet_cidr
-  availability_zone       = var.az
-  map_public_ip_on_launch = true
-  depends_on              = [aws_internet_gateway.k3s]
-  tags = {
-    Name = "k3s-public-subnet"
+  // Tags required by k8s Ref https://github.com/terraform-aws-modules/terraform-aws-vpc
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = true
   }
-}
 
-/* Routing table for public subnet */
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.k3s.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.k3s.id
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = true
   }
-  tags = {
-    Name = "k3s-public-rt"
-  }
-}
 
-/* Associate the routing table to public subnet */
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
 }
 
 /* Default security group */
-resource "aws_security_group" "public" {
+resource "aws_security_group" "k3s_public_sg" {
   name        = "k3s-sg"
   description = "k3s security group that allows inbound and outbound traffic from all instances in the VPC"
-  vpc_id      = aws_vpc.k3s.id
+  vpc_id      = module.k3s_vpc.vpc_id
 
   ingress {
     from_port = "0"
@@ -78,10 +63,19 @@ resource "aws_security_group" "public" {
   }
 
   ingress {
-    from_port   = 1194
-    to_port     = 1194
-    protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+    cidr_blocks = var.ingress_cidrs
+  }
+
+  ingress {
+
+    from_port   = 443
+    protocol    = "tcp"
+    to_port     = 443
+    cidr_blocks = var.ingress_cidrs
+
   }
 
   egress {
@@ -92,7 +86,7 @@ resource "aws_security_group" "public" {
   }
 
   tags = {
-    Name = "k3s-sg"
+    Name = "k3s-public-sg"
   }
 }
 
@@ -100,7 +94,7 @@ resource "aws_security_group" "public" {
 resource "aws_instance" "k3s-worker" {
   count             = 3
   ami               = var.amis[var.region]
-  instance_type     = "a1.large"
+  instance_type     = "t2.micro"
   subnet_id         = aws_subnet.public.id
   security_groups   = [aws_security_group.public.id]
   key_name          = aws_key_pair.k3s.key_name

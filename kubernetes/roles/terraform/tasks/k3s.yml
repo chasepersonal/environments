@@ -14,6 +14,16 @@
   set_fact:
     terraform_build_folder: "files/k3s-{{ build }}/"
 
+- name: Check if k3s ssh key pair exists
+  stat:
+    path: "~/.ssh/k3s-{{ build }}"
+  register: ssh_keypair_status
+
+- name: Generate ssh key pair for k3s if it doesn't exist
+  openssh_keypair:
+    path: "~/.ssh/k3s-{{ build }}"
+  when: ssh_keypair_status.stat.exists == False
+
 - name: Import terraform pre steps
   import_tasks: pre.yml
 

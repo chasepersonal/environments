@@ -11,9 +11,15 @@ variable "region" {
   default     = "us-east-2"
 }
 
-variable "az" {
+variable "azs" {
   description = "AWS availability_zone"
-  default     = "us-east-2b"
+  type        = "list"
+  default     = ["us-east-2a", "us-east-2b"]
+}
+
+variable "vpc_name" {
+  descritpion = "Name of VPC"
+  default     = "k3s-aws-vpc"
 }
 
 variable "vpc_cidr" {
@@ -31,10 +37,10 @@ variable "private_subnet_cidr" {
   default     = "10.128.1.0/24"
 }
 
-/* Debian Stretch ARM AMI's by region */
+/* Fedora Core OS AMI for us-east-2 */
 variable "amis" {
   description = "Base AMI to launch the instances with"
   default = {
-    us-east-2 = "ami-017f21c6f1ce56a78"
+    us-east-2 = "ami-087891c79012c7f54"
   }
 }
