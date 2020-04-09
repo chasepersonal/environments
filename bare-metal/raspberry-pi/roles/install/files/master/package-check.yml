@@ -7,16 +7,31 @@
         name: ansible
         state: present
         update_cache: yes
-      when: ansible_hostname in groups['master']
+      become: yes
+      when: ansible_default_ipv4.address in groups['master']
     
     - name: Ensure storage package is installed
       apt:
         name: rbd-nbd
         state: present
         update_cache: yes
+      become: yes
 
     - name: Update packages
       apt:
         name: "*"
         state: latest
         update_cache: yes
+        # Force is needed for Ansible to process upgrade correctly
+        force_apt_get: yes
+      become: yes
+    
+    - name: Clean out old packages
+      apt:
+        autoclean: yes
+      become: yes
+
+    - name: Remove old packages
+      apt:
+        autoremove: yes
+      become: yes
