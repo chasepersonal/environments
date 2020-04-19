@@ -5,7 +5,7 @@
     versioning: yes
     encryption: AES256
     region: us-east-2
-  when: build == 'aws' or build == 'do' or build == 'pi'
+  when: build == 'aws' or build == 'do'
   
 - name: Set bucket name
   set_fact:

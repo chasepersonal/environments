@@ -1,0 +1,19 @@
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: cf-le-prod
+    kubernetes.io/ingress.class: "contour"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  virtualhost:
+    fdqn: argocd.chaseweyer.com
+    tls:
+      secretName: argocd-secret
+  routes:
+    - match: /
+      services:
+        - name: argocd-server
+          port: https

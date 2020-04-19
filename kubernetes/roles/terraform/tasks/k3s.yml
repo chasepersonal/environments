@@ -1,10 +1,10 @@
 - name: Include AWS credentials to allow creation of s3 bucket for Terraform state
   include_vars:
-    file: vars/aws/k3s-creds.yml
+    file: ../../vars/k3s/aws/creds.yml
 
 - name: Include variables for terraform so it can access DigitalOcean
   include_vars:
-    dir: 'vars/do'
+    dir: '../../vars/do'
   when: build == 'do'
 
 - name: Import steps for terraform state bucket configuration
@@ -21,7 +21,7 @@
 
 - name: Generate ssh key pair for k3s if it doesn't exist
   openssh_keypair:
-    path: "~/.ssh/k3s-{{ build }}"
+    path: "~/.ssh/k3s_{{ build }}"
   when: ssh_keypair_status.stat.exists == False
 
 - name: Import terraform pre steps

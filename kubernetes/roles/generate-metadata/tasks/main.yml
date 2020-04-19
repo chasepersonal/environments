@@ -1,3 +1,9 @@
+- name: Ensure metadata folder in each deployment is available
+  file:
+    path: ../../roles/{{ item }}/meta
+    state: directory
+  loop: "{{ deployment_list }}"
+
 - name: Generate Role Metadata
   template:
     src: ../../roles/{{ item }}/templates/meta.yml.j2
