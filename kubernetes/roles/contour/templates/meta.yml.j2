@@ -1,0 +1,9 @@
+---
+dependencies:
+  role: {{ deployment_type }}
+  {% if deployment_type == 'helm' %}
+  vars:
+    helm_chart_name: contour
+    helm_repo_name: stable/contour
+    helm_namespace: kube-system
+  {% endif %}

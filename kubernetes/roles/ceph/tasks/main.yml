@@ -24,9 +24,16 @@
     validate:
       fail_on_error: yes
 
-# - name: Create s3 storage class
-#   k8s:
-#     state: present
-#     definition: "{{ lookup('file', 'files/s3storageclass.yml') }}"
-#     validate:
-#       fail_on_error: yes
+- name: Create s3 storage object
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/ceph-object-store.yml') }}"
+    validate:
+      fail_on_error: yes
+
+- name: Create s3 storage class
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/ceph-object-store-sc.yml') }}"
+    validate:
+      fail_on_error: yes

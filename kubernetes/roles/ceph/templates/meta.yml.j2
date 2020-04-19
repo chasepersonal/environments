@@ -1,0 +1,12 @@
+---
+dependencies:
+  role: {{ deployment_type }}
+  {% if deployment_type == 'helm' %}
+  vars:
+    helm_chart_name: rook-ceph
+    helm_repo_url: https://charts.rook.io/release
+    helm_repo_name: rook-release/rook-ceph
+    helm_namespace: rook-ceph
+  {% endif %}
+
+    

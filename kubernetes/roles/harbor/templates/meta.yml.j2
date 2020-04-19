@@ -1,0 +1,10 @@
+---
+dependencies:
+  role: {{ deployment_type }}
+  {% if deployment_type == 'helm' %}
+  vars:
+    helm_chart_name: harbor
+    helm_repo_url: https://helm.goharbor.io
+    helm_repo_name: harbor/harbor
+    helm_namespace: harbor
+  {% endif %}

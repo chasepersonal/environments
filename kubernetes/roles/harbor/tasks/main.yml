@@ -1,0 +1,2 @@
+- name: Confirm Harbor was installed
+  shell: kubectl get all --all-namespaces | grep harbor

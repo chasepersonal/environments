@@ -1,2 +1,3 @@
 user: pi
 build: pi
+deployment_list: ['cert-manager', 'metallb', 'contour', 'ceph', 'harbor']

@@ -1,1 +1,4 @@
 region: us-east-2
+user: coreos
+build: aws
+deployment_list: ['cert-manager', 'contour', 'ceph', 'harbor']

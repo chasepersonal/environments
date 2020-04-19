@@ -1,22 +1,15 @@
-apiVersion: extensions/v1beta1
-kind: Ingress
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
 metadata:
   name: rook-ceph-mgr-dashboard
   namespace: rook-ceph
-  annotations:
-    kubernetes.io/ingress.class: "contour"
-    kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  tls:
-   - hosts:
-     - ceph-dash.chaseweyer.com
-     secretName: cf-le-prod
-  rules:
-  - host: ceph-dash.chaseweyer.com
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: rook-ceph-mgr-dashboard
-          servicePort: https-dashboard
+  virtualhost:
+    fdqn: ceph-dash.chaseweyer.com
+    tls:
+      secretName: cf-le-prod
+  routes:
+    - match: /
+      services:
+        - name: rook-ceph-mgr-dashboard
+          port: https-dashboard

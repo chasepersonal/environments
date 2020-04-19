@@ -1,0 +1,5 @@
+- name: Generate Role Metadata
+  template:
+    src: ../../roles/{{ item }}/templates/meta.yml.j2
+    dest: ../../roles/{{ item }}/meta/main.yml
+  loop: "{{ deployment_list }}"

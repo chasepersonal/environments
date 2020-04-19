@@ -1,18 +1,18 @@
-- name: Download Cert-Manager authorization header files
-  shell: kubectl apply \
-    --validate=false \
-    -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+# - name: Download Cert-Manager authorization header files
+#   shell: kubectl apply \
+#     --validate=false \
+#     -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
 
-- name: Update the helm repos before installing cert-manager
-  shell: helm repo update
+# - name: Update the helm repos before installing cert-manager
+#   shell: helm repo update
 
-- name: Install Cert-Manager
-  shell: helm install stable/cert-manager \
-        --name cert-manager \
-        --namespace cert-manager \
-        --set ingressShim.defaultIssuerName="letsencrypt-prod" \
-        --set ingressShim.defaultIssuerKind="ClusterIssuer" \
-        --version v0.9.0
+# - name: Install Cert-Manager
+#   shell: helm install stable/cert-manager \
+#         --name cert-manager \
+#         --namespace cert-manager \
+#         --set ingressShim.defaultIssuerName="letsencrypt-prod" \
+#         --set ingressShim.defaultIssuerKind="ClusterIssuer" \
+#         --version v0.9.0
 
 - name: Create the cloudflare secret
   k8s:

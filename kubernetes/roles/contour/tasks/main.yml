@@ -1,2 +1,3 @@
-- name: Install Contour
-  shell: kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+- name: Confirm Contour was installed
+  shell: kubectl get all --all-namespaces | grep contour
+  
