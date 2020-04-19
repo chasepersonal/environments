@@ -2,7 +2,7 @@
 - hosts: all
   remote_user: pi
   tasks:
-    - name: Ensure Ansible is installed on the main machine
+    - name: Ensure Ansible is installed on the master machine
       apt:
         name: ansible
         state: present
@@ -10,9 +10,11 @@
       become: yes
       when: ansible_default_ipv4.address in groups['master']
     
-    - name: Ensure storage package is installed
+    - name: Ensure machine pacakges needed are installed
       apt:
-        name: rbd-nbd
+        name: 
+        - rbd-nbd
+        - python3
         state: present
         update_cache: yes
       become: yes
