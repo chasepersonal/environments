@@ -4,6 +4,7 @@ provider "aws" {
 
   region                  = var.region
   shared_credentials_file = "$HOME/.aws/credentials"
+
 }
 
 /* Set up key pair to use */
@@ -41,10 +42,10 @@ module "k3s_vpc" {
 
 }
 
-/* Default security group */
-resource "aws_security_group" "k3s_public_sg" {
+/* Master node security group */
+resource "aws_security_group" "k3s_sg" {
   name        = "k3s-sg"
-  description = "k3s security group that allows inbound and outbound traffic from all instances in the VPC"
+  description = "k3s security group tailored to all nodes in the cluster"
   vpc_id      = module.k3s_vpc.vpc_id
 
   ingress {
@@ -85,7 +86,7 @@ resource "aws_security_group" "k3s_public_sg" {
   }
 
   tags = {
-    Name = "k3s-public-sg"
+    Name = "k3s-sg"
   }
 }
 
@@ -94,8 +95,8 @@ resource "aws_instance" "k3s-worker" {
   count             = 3
   ami               = var.amis[var.region]
   instance_type     = "t2.micro"
-  subnet_id         = aws_subnet.public.id
-  security_groups   = [aws_security_group.public.id]
+  subnet_id         = module.k3s_vpc.private_subnets[0]
+  security_groups   = [aws_security_group.k3s_sg.id]
   key_name          = aws_key_pair.k3s.key_name
   source_dest_check = true
   tags = {
@@ -108,8 +109,8 @@ resource "aws_instance" "k3s-master" {
   count             = 1
   ami               = var.amis[var.region]
   instance_type     = "a1.large"
-  subnet_id         = aws_subnet.public.id
-  security_groups   = [aws_security_group.public.id]
+  subnet_id         = module.k3s_vpc.public_subnets[0]
+  security_groups   = [aws_security_group.k3s_sg.id]
   key_name          = aws_key_pair.k3s.key_name
   source_dest_check = true
   tags = {
