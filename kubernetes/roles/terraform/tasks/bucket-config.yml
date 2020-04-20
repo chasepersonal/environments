@@ -6,7 +6,19 @@
     encryption: AES256
     region: us-east-2
   when: build == 'aws' or build == 'do'
-  
+
+- name: Check if bucket has public access
+  shell: "aws s3api get-public-access-block --bucket k3s-{{ build }}-cpw-cluster-state"
+  register: s3_bucket_public_access_status
+  when: build == 'aws' or build == 'do'
+
+- name: Block all public access for the state bucket if it hasn't been already
+  shell: "aws s3api put-public-access-block --bucket k3s-{{ build }}-cpw-cluster-state --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+  when:
+    - s3_bucket_public_access_status.stdout is defined
+    - s3_bucket_public_access_status.stdout.find('The public access block configuration was not found') != -1
+
 - name: Set bucket name
   set_fact:
     bucket: "k3s-{{ build }}-cpw-cluster-state"
+  when: build == 'aws' or build == 'do'

@@ -18,4 +18,4 @@
 - name: Import variables for AWS build
   include_vars:
     dir: vars/k3s/aws
-  when: build == 'aws'
+  #when: build == 'aws'

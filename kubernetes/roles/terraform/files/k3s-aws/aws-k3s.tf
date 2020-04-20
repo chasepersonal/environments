@@ -1,10 +1,9 @@
 /* Setup our aws provider */
 provider "aws" {
-  version = "~> v2.33.0"
+  version = "~> v2.53.0"
 
-  access_key = var.access_key
-  secret_key = var.secret_key
-  region     = var.region
+  region                  = var.region
+  shared_credentials_file = "$HOME/.aws/credentials"
 }
 
 /* Set up key pair to use */

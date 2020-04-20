@@ -1,12 +1,3 @@
-- name: Include AWS credentials to allow creation of s3 bucket for Terraform state
-  include_vars:
-    file: ../../vars/k3s/aws/creds.yml
-
-- name: Include variables for terraform so it can access DigitalOcean
-  include_vars:
-    dir: '../../vars/do'
-  when: build == 'do'
-
 - name: Import steps for terraform state bucket configuration
   import_tasks: bucket-config.yml
 
@@ -20,8 +11,14 @@
   register: ssh_keypair_status
 
 - name: Generate ssh key pair for k3s if it doesn't exist
-  openssh_keypair:
-    path: "~/.ssh/k3s_{{ build }}"
+  block:
+    - name: Create SSH folder
+      file:
+        path: ~/.ssh
+        state: directory
+    - name: Generate ssh keypair
+      openssh_keypair:
+        path: "~/.ssh/k3s_{{ build }}"
   when: ssh_keypair_status.stat.exists == False
 
 - name: Import terraform pre steps
@@ -31,17 +28,19 @@
   template:
     src: templates/s3-backend/s3-backend.tf.j2
     dest: $HOME/terraform/s3-backend.tf
+  vars:
+    workspace: "k3s-{{ build }}-cluster"
 
 - name: Move terraform files to main folder
-  template:
+  copy:
     src: "{{ terraform_build_folder }}"
     dest: $HOME/terraform
 
 - name: Import main terraform steps
   import_tasks: build.yml
   vars:
-    tf_plan_name: "{{ build }}-k3s-cluster"
-    workspace: "{{ build }}-k3s-cluster"
+    tf_plan_name: "k3s-{{ build }}-cluster"
+    workspace: "k3s-{{ build }}-cluster"
 
 - name: Get master ip's
   shell: terraform output | grep m | awk '{ print $3 }'

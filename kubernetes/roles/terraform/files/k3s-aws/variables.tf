@@ -18,7 +18,7 @@ variable "azs" {
 }
 
 variable "vpc_name" {
-  descritpion = "Name of VPC"
+  description = "Name of VPC"
   default     = "k3s-aws-vpc"
 }
 
