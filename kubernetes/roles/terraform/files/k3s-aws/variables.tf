@@ -16,7 +16,7 @@ variable "vpc_name" {
 
 variable "vpc_cidr" {
   description = "CIDR for VPC"
-  default     = "10.128.0.0/16"
+  default     = "10.0.0.0/16"
 }
 
 variable "private_subnet_cidrs" {
@@ -28,7 +28,7 @@ variable "private_subnet_cidrs" {
 variable "public_subnet_cidrs" {
   description = "CIDR for public subnets"
   type = "list"
-  default = ["10.0.101.0/24"]
+  default = ["10.0.10.0/24"]
 }
 
 variable "ingress_cidrs" {
