@@ -8,8 +8,8 @@ provider "aws" {
 }
 
 /* Set up key pair to use */
-resource "aws_key_pair" "k3s" {
-  key_name   = "k3s"
+resource "aws_key_pair" "k3s_cluster_kp" {
+  key_name   = "k3s_cluster"
   public_key = file("~/.ssh/k3s_aws.pub")
 }
 
@@ -24,7 +24,7 @@ module "k3s_vpc" {
   private_subnets = var.private_subnet_cidrs
   public_subnets  = var.public_subnet_cidrs
 
-  enable_nat_gateway = true
+  enable_nat_gateway = false
 
   tags = {
     "kubernetes.io/cluster/k3s-aws-cpw-cluster"  = "shared"
@@ -42,7 +42,7 @@ module "k3s_vpc" {
 
 }
 
-/* Master node security group */
+/* Cluster security group */
 resource "aws_security_group" "k3s_sg" {
   name        = "k3s-sg"
   description = "k3s security group tailored to all nodes in the cluster"
@@ -91,29 +91,43 @@ resource "aws_security_group" "k3s_sg" {
 }
 
 /* Worker servers */
-resource "aws_instance" "k3s-worker" {
+resource "aws_instance" "k3s_worker" {
   count             = 3
   ami               = var.amis[var.region]
   instance_type     = "t2.micro"
   subnet_id         = module.k3s_vpc.private_subnets[0]
   security_groups   = [aws_security_group.k3s_sg.id]
-  key_name          = aws_key_pair.k3s.key_name
+  key_name          = aws_key_pair.k3s_cluster_kp.key_name
   source_dest_check = true
   tags = {
     Name = "k3s-aws-w-${count.index}"
   }
 }
 
+/* Output the worker ip addresses */
+
+output "worker_ip_addr" {
+  value       = formatlist("%s:%s", aws_instance.k3s_worker[*].tags.Name, aws_instance.k3s_worker[*].private_ip)
+  description = "Show all of the worker node ip addresses"
+}
+
 /* Master server */
-resource "aws_instance" "k3s-master" {
+resource "aws_instance" "k3s_master" {
   count             = 1
   ami               = var.amis[var.region]
-  instance_type     = "a1.large"
+  instance_type     = "t2.large"
   subnet_id         = module.k3s_vpc.public_subnets[0]
   security_groups   = [aws_security_group.k3s_sg.id]
-  key_name          = aws_key_pair.k3s.key_name
+  key_name          = aws_key_pair.k3s_cluster_kp.key_name
   source_dest_check = true
   tags = {
     Name = "k3s-aws-m-${count.index}"
   }
+}
+
+/* Output the master node ip addresses */
+
+output "master_ip_addr" {
+  value       = format("%s:%s", aws_instance.k3s_master[0].tags.Name, aws_instance.k3s_master[0].public_ip)
+  description = "Show all of the master node ip addresses"
 }

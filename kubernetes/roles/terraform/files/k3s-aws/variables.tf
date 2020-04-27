@@ -37,10 +37,10 @@ variable "ingress_cidrs" {
   default = ["10.0.0.80/32" , "10.0.0.81/32"]
 }
 
-/* Fedora Core OS AMI for us-east-2 */
+/* Ubuntu 20.04 AMI for us-east-2 */
 variable "amis" {
   description = "Base AMI to launch the instances with"
   default = {
-    us-east-2 = "ami-087891c79012c7f54"
+    us-east-2 = "ami-0e84e211558a022c0"
   }
 }
