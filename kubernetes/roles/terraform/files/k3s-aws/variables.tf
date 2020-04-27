@@ -19,22 +19,10 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDR for private subnets"
-  type = "list"
-  default = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-}
-
 variable "public_subnet_cidrs" {
   description = "CIDR for public subnets"
   type = "list"
-  default = ["10.0.10.0/24"]
-}
-
-variable "ingress_cidrs" {
-  description = "CIDRS for AWS ingress points"
-  type = "list"
-  default = ["10.0.0.80/32" , "10.0.0.81/32"]
+  default = ["10.0.10.0/24", "10.0.11.0/24", "10.0.12.0/24"]
 }
 
 /* Ubuntu 20.04 AMI for us-east-2 */

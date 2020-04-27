@@ -46,9 +46,9 @@
   shell: terraform output | grep k3s-{{ build }}-m | awk -F ':' ' {print $2 }' | tr -d '",'
   register: master_ips
 
-# - name: Get worker ip's
-#   shell: terraform output | grep k3s-{{ build }}-w | awk -F ':' ' {print $2 }' | tr -d '",'
-#   register: worker_ips
+- name: Get worker ip's
+  shell: terraform output | grep k3s-{{ build }}-w | awk -F ':' ' {print $2 }' | tr -d '",'
+  register: worker_ips
 
 - name: Add master ips to in memory inventory
   add_host:
@@ -56,11 +56,11 @@
     group: masters
   with_items: "{{ master_ips.stdout_lines }}"
 
-# - name: Add worker ips to in memory inventory
-#   add_host:
-#     name: "{{ item }}"
-#     group: workers
-#   with_items: "{{ worker_ips.stdout_lines }}"
+- name: Add worker ips to in memory inventory
+  add_host:
+    name: "{{ item }}"
+    group: workers
+  with_items: "{{ worker_ips.stdout_lines }}"
 
 - pause:
       seconds: 15
