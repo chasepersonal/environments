@@ -45,23 +45,27 @@
 - name: Get master ip's
   shell: terraform output | grep k3s-{{ build }}-m | awk -F ':' ' {print $2 }' | tr -d '",'
   register: master_ips
+  args:
+    chdir: $HOME/terraform
   failed_when: master_ips.stdout_lines is not defined
 
 - name: Get worker ip's
   shell: terraform output | grep k3s-{{ build }}-w | awk -F ':' ' {print $2 }' | tr -d '",'
   register: worker_ips
+  args:
+    chdir: $HOME/terraform
   failed_when: worker_ips.stdout_lines is not defined
 
 - name: Add master ips to in memory inventory
   add_host:
     hostname: "{{ item }}"
-    group: masters
+    groups: masters
   loop: "{{ master_ips.stdout_lines }}"
 
 - name: Add worker ips to in memory inventory
   add_host:
     hostname: "{{ item }}"
-    group: workers
+    groups: workers
   loop: "{{ worker_ips.stdout_lines }}"
 
 - name: Refresh inventory with the new hosts
@@ -72,14 +76,15 @@
     - name: Show new masters
       debug:
         msg: "{{ groups['masters'] }}"
+      failed_when:
+        - groups['masters'] is not defined
+        - groups['masters'] == "" 
     - name: Show new workers
       debug:
         msg: "{{ groups['workers'] }}"
-  failed_when:
-    - groups['masters'] is not defined
-    - groups['masters'] == "" 
-    - groups['workers'] is not defined
-    - groups['workers'] == ""
+      failed_when:
+        - groups['workers'] is not defined
+        - groups['workers'] == ""
     
 - name: Import post steps for terraform
   import_tasks: post.yml

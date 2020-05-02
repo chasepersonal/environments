@@ -1,6 +1,28 @@
+- name: Check if terraform build has already been initialized
+  stat:
+    path: $HOME/terraform/.terraform
+  register: terraform_init_path
+
+- name: Check if a terraform build has already been run
+  shell: terraform output
+  register: terraform_output_pre_status
+  args:
+    chdir: $HOME/terraform
+  ignore_errors: yes
+  when: terraform_init_path.stat.exists == True
+  
 - name: Execute the terraform build
   terraform:
     project_path: $HOME/terraform/
     state: present
     workspace: "{{ workspace }}"
     force_init: yes
+  when: terraform_output_pre_status.stderr is defined or terraform_init_path.stat.exists == False
+
+- name: Ensure terraform can output the machine info
+  shell: terraform output
+  args:
+    chdir: $HOME/terraform
+  register: terraform_output_post_status
+  when: terraform_output_pre_status.stdout is not defined
+

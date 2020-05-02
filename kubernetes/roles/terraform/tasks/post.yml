@@ -5,7 +5,7 @@
   stat:
     path: /tmp/terraform-backup
   register: terraform_backup
-  failed_when: terraform_backup.stat.exsits == False
+  failed_when: terraform_backup.stat.exists == False
 
 - name: Archive the terraform backup
   archive:

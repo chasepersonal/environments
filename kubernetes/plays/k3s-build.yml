@@ -1,5 +1,9 @@
 - hosts: localhost
   tasks:
+    - name: Set cluster type to k3s
+      set_fact:
+        cluster_type: k3s
+        
     - name: Include role for parsing build files
       import_role: 
         name: ../roles/import-build-vars
