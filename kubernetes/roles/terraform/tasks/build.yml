@@ -24,5 +24,4 @@
   args:
     chdir: $HOME/terraform
   register: terraform_output_post_status
-  when: terraform_output_pre_status.stdout is not defined
 
