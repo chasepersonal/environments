@@ -1,3 +1,22 @@
+- name: Copy terraform files to the tmp folder
+  shell: cp -R $HOME/terraform /tmp/terraform-backup
+
+- name: Ensure the terraform files were backed up
+  stat:
+    path: /tmp/terraform-backup
+  register: terraform_backup
+  failed_when: terraform_backup.stat.exsits == False
+
+- name: Archive the terraform backup
+  archive:
+    path: /tmp/terraform-backup
+    dest: /tmp/terraform-backup.tgz
+
+- name: Send archived backup to object storage
+  s3_sync:
+    bucket: "{{ bucket }}"
+    file_root: /tmp/terraform-backup.tgz
+    
 - name: Remove terraform folder
   file:
     path: $HOME/terraform

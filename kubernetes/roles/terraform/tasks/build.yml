@@ -1,49 +1,6 @@
-- name: Plan the terraform build
-  terraform:
-    project_path: $HOME/terraform/
-    state: planned
-    workspace: "{{ workspace }}"
-
 - name: Execute the terraform build
   terraform:
     project_path: $HOME/terraform/
     state: present
     workspace: "{{ workspace }}"
-
-# - name: Check if terraform has been initialized
-#   stat:
-#     path: $HOME/terraform/.terraform
-#   register: terraform_init
-
-# - name: Initialize terraform if it hasn't been already
-#   shell: terraform init
-#   when: terraform_init.stat.exists == False
-#   args:
-#     chdir: $HOME/terraform
-
-# - name: List current workspaces
-#   shell: "terraform workspace list"
-#   register: terraform_workspace_list
-#   args:
-#     chdir: $HOME/terraform
-
-# - name: Create workspace if it doesn't exist
-#   shell: "terraform workspace new {{ workspace }}"
-#   args:
-#     chdir: $HOME/terraform
-#   when: workspace not in terraform_workspace_list.stdout
-
-# - name: Set workspace
-#   shell: "terraform workspace select {{ workspace }}"
-#   args:
-#     chdir: $HOME/terraform
-
-# - name: Run terraform plan and create a plan file
-#   shell: terraform plan -out={{ tf_plan_name }}.tfplan
-#   args:
-#     chdir: $HOME/terraform
-
-# - name: Run terraform apply from plan file
-#   shell: terraform apply "{{ tf_plan_name }}.tfplan"
-#   args:
-#     chdir: $HOME/terraform
+    force_init: yes

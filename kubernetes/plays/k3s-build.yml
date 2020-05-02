@@ -1,9 +1,5 @@
 - hosts: localhost
   tasks:
-    - name: Include main k3s vars
-      include_vars:
-        dir: ../roles/import-build-vars/vars/k3s/main
-
     - name: Include role for parsing build files
       import_role: 
         name: ../roles/import-build-vars
@@ -13,7 +9,7 @@
         name: ../roles/terraform
       when: build != 'pi'
       
-- hosts: master
+- hosts: masters
   remote_user: "{{ user }}"
   become: yes
   tasks:
@@ -42,7 +38,7 @@
 
     - name: Include variables for k3s items
       include_vars:
-        dir: ../vars/k3s
+        dir: ../roles/import-build-vars/vars/k3s/main
 
     - name: Copy kubeconfig from master to host
       fetch:
