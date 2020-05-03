@@ -12,7 +12,7 @@
   shell: terraform workspace new {{ workspace }}
   when:
     - terraform_workspaces is defined
-    - terraform_workspaces.count == 1
+    - terraform_workspaces.stdout.count == 1
     - terraform_init_path.stat.exists == True
 
 - name: Check if a terraform build has already been run
@@ -45,8 +45,12 @@
     - terraform_init_path.stat.exists == True
 
 - name: Show Terraform build outputs
-  debug:
-    var: terraform_build
+  block:
+    - debug:
+        var: terraform_build.outputs.master_ip_addr.value
+    - debug:
+        var: terraform_build.outputs.worker_ip_addr.value
+  
 
 - name: Display message if Terraform Build exists
   debug:

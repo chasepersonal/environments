@@ -57,7 +57,7 @@
         chdir: $HOME/terraform
     - name: Convert master ip's output to more readable fact
       set_fact:
-        master_ips: master_ips_output.stdout_lines
+        master_ips: "{{ master_ips_output.stdout_lines }}"
     - name: Get worker ip's from terraform Shell
       shell: terraform output worker_ip_addr
       register: worker_ips_output
@@ -65,17 +65,17 @@
         chdir: $HOME/terraform
     - name: Convert master ip's output to more readable fact
       set_fact:
-        worker_ips: worker_ips_output.stdout_lines
+        worker_ips: "{{ worker_ips_output.stdout_lines }}"
   when: terraform_build.outputs is not defined
 
 - name: Get machine ip's - Ansible terraform output
   block:
     - name: Get master ip's from Ansible Terraform output
       set_fact:
-        master_ips: terraform_build.outputs.master_ip_addr.value
+        master_ips: "{{ terraform_build.outputs.master_ip_addr.value }}"
     - name: Get worker ip's from Ansible Terraform output
       set_fact:
-        worker_ips: terraform_build.outputs.master_ip_addr.value
+        worker_ips: "{{ terraform_build.outputs.master_ip_addr.value }}"
   when: terraform_build.outputs is defined
 
 - name: Add master ips to in memory inventory

@@ -1,0 +1,9 @@
+- name: Set up private key for Ansible configuration
+  set_fact:
+    private_key: "{{ cluster_type }}-{{ build }}"
+
+- name: Set up Ansible configuration on the host
+  template:
+    src: templates/ansible.cfg.j2
+    dest: /etc/ansible.cfg
+  become: yes
