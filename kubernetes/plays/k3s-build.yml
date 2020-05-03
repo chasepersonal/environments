@@ -1,14 +1,11 @@
-- hosts: localhost
+- hosts: 127.0.0.1
+  connection: local
   tasks:
     - name: Set cluster type to k3s
       set_fact:
         cluster_type: k3s
-        
-    - name: Include role for parsing build files
-      import_role: 
-        name: ../roles/import-build-vars
       
-    - name: Import Terraform deployment
+    - name: Deploy Terraform infra
       import_role:
         name: ../roles/terraform
       when: build != 'pi'
@@ -37,13 +34,9 @@
         name: ../roles/k3s
         tasks_from: worker-init
 
-- hosts: localhost
-  tasks:
-
-    - name: Include variables for k3s items
-      include_vars:
-        dir: ../roles/import-build-vars/vars/k3s/main
-
+- hosts: 127.0.0.1
+  connection: local
+  
     - name: Copy kubeconfig from master to host
       fetch:
         src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
