@@ -157,7 +157,7 @@ resource "aws_instance" "k3s_master" {
 /* Output the master node ip addresses */
 
 output "master_ip_addr" {
-  value       = format("%s:%s", aws_instance.k3s_master[0].tags.Name, aws_instance.k3s_master[0].public_ip)
+  value       = aws_instance.k3s_master[0].public_ip
   description = "Show all of the master node ip addresses"
 }
 
@@ -178,6 +178,6 @@ resource "aws_instance" "k3s_worker" {
 /* Output the worker ip addresses */
 
 output "worker_ip_addr" {
-  value       = formatlist("%s:%s", aws_instance.k3s_worker[*].tags.Name, aws_instance.k3s_worker[*].public_ip)
+  value       = aws_instance.k3s_worker[*].public_ip
   description = "Show all of the worker node ip addresses"
 }

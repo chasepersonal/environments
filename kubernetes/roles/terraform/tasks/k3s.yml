@@ -37,36 +37,56 @@
     dest: $HOME/terraform
 
 - name: Import main terraform steps
-  import_tasks: build.yml
+  include_tasks: build.yml
   vars:
     tf_plan_name: "k3s-{{ build }}-cluster"
     workspace: "k3s-{{ build }}-cluster"
 
-- name: Get master ip's
-  shell: terraform output | grep k3s-{{ build }}-m | awk -F ':' ' {print $2 }' | tr -d '",'
-  register: master_ips
-  args:
-    chdir: $HOME/terraform
-  failed_when: master_ips.stdout_lines is not defined
+- name: Get machine ip's - terraform Shell
+  block:
+    - name: Select the appropriate terraform workspace
+      shell: terraform workspace select {{ workspace }}
+      args:
+        chdir: $HOME/terraform
+    - name: Get master ip's from terraform Shell
+      shell: terraform output master_ip_addr
+      register: master_ips_output
+      args:
+        chdir: $HOME/terraform
+    - name: Convert master ip's output to more readable fact
+      set_fact:
+        master_ips: master_ips_output.stdout_lines
+    - name: Get worker ip's from terraform Shell
+      shell: terraform output worker_ip_addr
+      register: worker_ips_output
+      args:
+        chdir: $HOME/terraform
+    - name: Convert master ip's output to more readable fact
+      set_fact:
+        worker_ips: worker_ips_output.stdout_lines
+  when: terraform_build.outputs is not defined
 
-- name: Get worker ip's
-  shell: terraform output | grep k3s-{{ build }}-w | awk -F ':' ' {print $2 }' | tr -d '",'
-  register: worker_ips
-  args:
-    chdir: $HOME/terraform
-  failed_when: worker_ips.stdout_lines is not defined
+- name: Get machine ip's - Ansible terraform output
+  block:
+    - name: Get master ip's from Ansible Terraform output
+      set_fact:
+        master_ips: terraform_build.outputs.master_ip_addr.value
+    - name: Get worker ip's from Ansible Terraform output
+      set_fact:
+        worker_ips: terraform_build.outputs.master_ip_addr.value
+  when: terraform_build.outputs is defined
 
 - name: Add master ips to in memory inventory
   add_host:
     hostname: "{{ item }}"
     groups: masters
-  loop: "{{ master_ips.stdout_lines }}"
+  loop: "{{ master_ips }}"
 
 - name: Add worker ips to in memory inventory
   add_host:
     hostname: "{{ item }}"
     groups: workers
-  loop: "{{ worker_ips.stdout_lines }}"
+  loop: "{{ worker_ips }}"
 
 - name: Refresh inventory with the new hosts
   meta: refresh_inventory

@@ -3,25 +3,56 @@
     path: $HOME/terraform/.terraform
   register: terraform_init_path
 
+- name: Check if terraform workspace has been created
+  shell: terraform workspace list
+  register: terrafrom_workspaces
+  when: terraform_init_path.stat.exists == True
+
+- name: Create terraform workspace if it doesn't exist
+  shell: terraform workspace new {{ workspace }}
+  when: 
+    - terraform_workspaces.count == 1
+    - terraform_init_path.stat.exists == True
+
 - name: Check if a terraform build has already been run
-  shell: terraform output
+  shell: "terraform workspace select {{ workspace }} && terraform output"
   register: terraform_output_pre_status
   args:
     chdir: $HOME/terraform
   ignore_errors: yes
-  when: terraform_init_path.stat.exists == True
+  when: 
+    - terraform_init_path.stat.exists == True
+    - terraform_workspaces.stdout is defined
   
-- name: Execute the terraform build
+- name: Execute the terraform build - New Build
   terraform:
     project_path: $HOME/terraform/
     state: present
     workspace: "{{ workspace }}"
     force_init: yes
-  when: terraform_output_pre_status.stderr is defined or terraform_init_path.stat.exists == False
+  register: terrafrom_build
+  when: terraform_init_path.stat.exists == False
 
-- name: Ensure terraform can output the machine info
-  shell: terraform output
-  args:
-    chdir: $HOME/terraform
-  register: terraform_output_post_status
+- name: Execute the terraform build - ReBuild
+  terraform:
+    project_path: $HOME/terraform/
+    state: present
+    workspace: "{{ workspace }}"
+  register: terraform_build
+  when: 
+    - terraform_output_pre_status.stderr is defined
+    - terraform_init_path.stat.exists == True
+
+- name: Show Terraform build outputs
+  debug:
+    msg: "{{ terraform_build.outputs }}"
+  when: terraform_build.outputs is defined
+
+- name: Display message if Terraform Build exists
+  debug:
+    msg: "{{ bucket }} already exists"
+  when:
+    - terraform_output_pre_status.stdout is defined
+    - terraform_init_path.stat.exists == True
+
 
