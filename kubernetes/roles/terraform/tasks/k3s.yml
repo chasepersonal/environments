@@ -48,6 +48,8 @@
       shell: terraform workspace select {{ workspace }}
       args:
         chdir: $HOME/terraform
+      vars:
+        workspace: "k3s-{{ build }}-cluster"
     - name: Get master ip's from terraform Shell
       shell: terraform output master_ip_addr
       register: master_ips_output

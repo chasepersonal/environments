@@ -5,12 +5,13 @@
 
 - name: Check if terraform workspace has been created
   shell: terraform workspace list
-  register: terrafrom_workspaces
+  register: terraform_workspaces
   when: terraform_init_path.stat.exists == True
 
 - name: Create terraform workspace if it doesn't exist
   shell: terraform workspace new {{ workspace }}
-  when: 
+  when:
+    - terraform_workspaces is defined
     - terraform_workspaces.count == 1
     - terraform_init_path.stat.exists == True
 
@@ -30,7 +31,7 @@
     state: present
     workspace: "{{ workspace }}"
     force_init: yes
-  register: terrafrom_build
+  register: terraform_build
   when: terraform_init_path.stat.exists == False
 
 - name: Execute the terraform build - ReBuild
@@ -45,8 +46,7 @@
 
 - name: Show Terraform build outputs
   debug:
-    msg: "{{ terraform_build.outputs }}"
-  when: terraform_build.outputs is defined
+    var: terraform_build
 
 - name: Display message if Terraform Build exists
   debug:
