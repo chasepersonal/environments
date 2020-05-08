@@ -35,7 +35,7 @@ ansible-playbook ./environments/kubernetes/deploy-k3s.yml --vault-id harbor@prom
 To deploy a k3s cluster on a Raspberry Pi, run the k3s deployment playbook as follows:
 
 ```
-ansible-playbook -i /environments/kubernetes/inventory/pi/inventory /environments/kubernetes/deploy-k3s.yml --vault-id pi@prompt --vault-id harbor@prompt --vault-id k3s@prompt -e "build=pi user=pi cluster_type=k3s"
+ansible-playbook -i ./environments/kubernetes/inventory/pi/inventory /environments/kubernetes/deploy-k3s.yml --vault-id pi@prompt --vault-id harbor@prompt --vault-id k3s@prompt -e "build=pi user=pi cluster_type=k3s"
 ```
 
 ## Kops
