@@ -1,0 +1,9 @@
+- name: Set AWS credentials
+  template:
+    src: templates/aws-credentials.j2
+    dest: ~/.aws/credentials
+  
+- name: Set AWS config
+  template:
+    src: templates/aws-config.j2
+    dest: ~/.aws/config

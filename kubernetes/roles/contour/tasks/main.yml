@@ -1,0 +1,3 @@
+- name: Confirm Contour was installed
+  shell: kubectl get all --all-namespaces | grep contour
+  

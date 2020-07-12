@@ -1,0 +1,33 @@
+- name: Pre install creds for Cert-Manager if it is a certain version
+  shell: kubectl apply \
+    --validate=false \
+    -f https://raw.githubusercontent.com/jetstack/cert-manager/release-0.9/deploy/manifests/00-crds.yaml
+  when: 
+    - helm_version is defined
+    - helm_version == 0.9.0
+    - "'stable' in helm_repo_name"
+
+- name: Add helm repo if it is not stable
+  shell: "helm repo add {{ helm_repo_name }} {{ helm_repo_url }}"
+  when: "'stable' not in helm_repo_name"
+
+- name: Update repos before installing
+  shell: helm repo update
+
+- name: Install Helm Chart - Base
+  shell: "helm install {{ helm_chart_name }} --name {{ helm_name }} --namespace {{ helm_namespace }}"
+  when: helm_values_file is not defined
+
+- name: Install Helm Chart - Version
+  shell: "helm install {{ helm_chart_name }} --name {{ helm_name }} --namespace {{ helm_namespace }} --version {{ helm_version }}"
+  when: helm_version is defined
+
+- name: Install Helm Chart - Values
+  shell: "helm install {{ helm_chart_name }} --name {{ helm_name }} --namespace {{ helm_namespace }} -f {{ helm_values_file_path }}/values.yaml"
+  when: helm_values_file == "True"
+
+- name: Install Helm Chart - Values and Version
+  shell: "helm install {{ helm_chart_name }} --name {{ helm_name }} --namespace {{ helm_namespace }} -f {{ helm_values_file_path }}/values.yaml --version {{ helm_version }}"
+  when: 
+    - helm_values_file == "True"
+    - helm_version is defined

@@ -1,37 +1,9 @@
-- name: Check if terraform has been initialized
-  stat:
-    path: /environment/cloud/kubernetes/.terraform
-  register: terraform_init
+- name: Import k3s terraform steps
+  import_tasks: k3s.yml
+  when: cluster_type == 'k3s'
+  tags: k3s_build
 
-- name: Initialize terraform if it hasn't been already
-  shell: terraform init
-  when: terraform_init.stat.exists == False
-
-- name: Run terraform plan and create a plan file
-  shell: terraform plan -out=terraform.tfplan
-
-- name: Run terraform apply from plan file
-  shell: terraform apply "terraform.tfplan"
-
-- name: Get master ip's
-  shell: terraform output | grep m | awk '{ print $3 }'
-  register: master_ips
-
-- name: Get worker ip's
-  shell: terraform output | grep w | awk '{ print $3 }'
-  register: worker_ips
-
-- name: Add master ips to in memory inventory
-  add_host:
-    name: "{{ item }}"
-    group: master
-  with_items: "{{ master_ips.stdout_lines }}"
-
-- name: Add worker ips to in memory inventory
-  add_host:
-    name: "{{ item }}"
-    group: workers
-  with_items: "{{ worker_ips.stdout_lines }}"
-
-- pause:
-    seconds: 15
+- name: Import kops terraform steps
+  import_tasks: kops.yml
+  when: cluster_type == 'kops'
+  tags: kops_build

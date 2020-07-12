@@ -1,0 +1,34 @@
+provider "helm" {
+  version        = "{{ helm_version }}"
+}
+
+{% if build == 'aws' or build == 'pi' %}
+terraform {
+  backend "s3" {
+    bucket                = "{{ bucket }}"
+    key                   = "terraform/terraform.tfstate"
+    region                = "{{ region }}"
+    workspace_key_prefix  = "helm-cert-manager"
+  }
+}
+{% endif %}
+
+resource "helm_release" "cert_manager" {
+  name  = "cert-manager"
+  chart = "stable/cert-manager"
+  namespace = "kube-system"
+  version = "{{ cert_manager_version }}"
+
+  set {
+    name  = "ingressShim.defaultIssuerName"
+    value = "cf-le-prod"
+  }
+
+  set {
+    name  = "ingressShim.defaultIssuerKind"
+    value = "ClusterIssuer"
+  }
+}
+
+
+»

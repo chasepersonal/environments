@@ -1,0 +1,62 @@
+- name: Check if Route53 subdomain for kops already exists
+  route53:
+    state: get
+    zone: "{{ subdomain }}"
+  register: kops_subdomain_check
+
+- debug:
+    var: kops_subdomain_check
+
+- name: Create Route53 hosted zone if it doesn't exist
+  route53:
+    state: present
+    zone: "{{ subdomain }}"
+    identifier: "{{ lookup('pipe', 'uuidgen') }}"
+  register: kops_subdomain_new
+  when: kops_subdomain_check.set.zone == ""
+
+- name: Get Nameservers for Route53 kops subdomain - Existing
+  route53:
+    state: get
+    zone: "{{ subdomain }}"
+    identifier: "{{ kops_subdomain_check.set.identifier }}"
+  when: kops_subdomain_check.set.zone != ""
+
+- name: Get Nameservers for Route53 kops suddomain - New
+  route53:
+    state: get
+    zone: "{{ subdomain }}"
+    identifier: "{{ kops_subdomain_new.identifier }}"
+  when: kops_subdomain_new is defined
+
+- name: Add Nameservers to Cloudflare - Existing
+  cloudflare_dns:
+    zone: "{{ domain }}"
+    record: "{{ record }}"
+    type: NS
+    value: "{{ item.nameservers }}"
+    account_email: "{{ email }}"
+    account_api_token: "{{ cloudflare_api_token }}"
+  loop: "{{ kops_subdomain_check.set }}"
+  when: kops_subdomain_check.set.zone != ""
+
+- name: Add Nameservers to Cloudflare - New
+  cloudflare_dns:
+    zone: "{{ domain }}"
+    record: "{{ record }}"
+    type: NS
+    value: "{{ item.nameservers }}"
+    account_email: "{{ email }}"
+    account_api_token: "{{ cloudflare_api_token }}"
+  loop: "{{ kops_subdomain_new }}"
+  when: kops_subdomain_new is defined
+
+- name: Create s3 bucket to store kops state
+  s3_bucket:
+    name: "kops-{{ build }}-cluster-state-cpw"
+    state: present
+    versioning: yes
+    encryption: AES256
+    region: us-east-2
+
+

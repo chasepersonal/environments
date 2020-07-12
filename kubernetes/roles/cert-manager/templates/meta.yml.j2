@@ -1,0 +1,10 @@
+---
+dependencies:
+  role: {{ deployment_type }}
+  {% if deployment_type == 'helm' %}
+  vars:
+    helm_chart_name: cert-manager
+    helm_repo_name: stable/cert-manager
+    helm_namespace: kube-system
+    helm_version: v0.9.0
+  {% endif %}

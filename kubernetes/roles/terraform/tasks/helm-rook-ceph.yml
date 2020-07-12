@@ -1,0 +1,74 @@
+- name: Import helm build steps
+  import_tasks: helm-main.yml
+  vars:
+    package: rook-ceph
+    values_file: n/a
+
+- name: Create Pi Ceph Cluster
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-cluster-pi.yml') }}"
+    validate:
+      fail_on_error: yes
+  when: build == 'pi'
+  tags: rook-ceph-pi-cluster
+
+- name: Create Ceph block storage class
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/blockstorageclass.yml') }}"
+    validate:
+      fail_on_error: yes
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+
+- name: Create Ceph Object Storage Definition
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-object-store.yml') }}"
+    validate:
+      fail_on_error: yes
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+
+- name: Create Ceph object storage class
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-object-sc.yml') }}"
+    validate:
+      fail_on_error: yes
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+
+- name: Create Ceph Ingress for Ceph Dashboard
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'files/helm/rook-ceph/ceph-ingress.yml') }}"
+    validate:
+      fail_on_error: yes
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+      
+- name: Check storage classes
+  shell: kubectl get sc
+  register: sc_status
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+
+- name: If local storage exists, remove it as the default
+  shell: "kubectl patch sc local-path -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'"
+  when: sc_status.stdout.find('local-path') != -1
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources
+
+- name: Make block storage the default class
+  shell: "kubectl patch sc rook-ceph-block -p '{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}'"
+  tags:
+    - rook-ceph-pi-cluster
+    - rook-ceph-additional-resources

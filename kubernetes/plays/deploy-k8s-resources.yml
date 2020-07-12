@@ -1,0 +1,9 @@
+- hosts: localhost
+  remote_user: "{{ user }}"
+  tasks:
+    - name: Generate Metadata for k8s Deployments
+      import_role: ../roles/generate-metadata
+
+    - name: Create k8s Deployments
+      include_role: "../roles/{{ item }}"
+      loop: "{{ deployment_list }}"

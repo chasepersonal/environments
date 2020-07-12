@@ -1,0 +1,3 @@
+- name: Import AWS configuration for aws build
+  import_tasks: configure-aws.yml
+  when: build == 'aws'

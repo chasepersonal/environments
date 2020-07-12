@@ -1,71 +1,55 @@
 # Kubernetes
 
-This repository will contain all the necessary files to perform Kubernetes installations on cloud platforms. This not only includes managed Kubernetes services on Cloud Providers (like EKS on AWS), but will also include non-cloud provider installs like installing k3s on a Raspberry Pi cluster.
+The following directory contains build files for creating Kubernetes deployments across multiple cloud providers and raspberry pi environments in a standardized way utilizing a combination of Kubernetes deployment tools, Ansible, and Terraform.
 
-As such, the following items will be included in this directory depending on the build type:
+The environment will also contain the following Helm deployments:
+
+Contour: For ingress deployments
+
+MetalLB: For Load Balancing (Rasperry Pi deployments only)
+
+Cert-Manager: For Handling certificates for web applications
+
+Rook-Ceph: For distributing block and s3 storage for future kubernetes deployemnts
+
+Harbor: For handling Docker and Helm deployments on the platform
 
 ## k3s
 
-k3s is a lightweight Kubernetes installation from the Rancher team that is mean to run on infrastructure with limited resources.
+The following Ansible playbook will deploy a k3s deployment on any cloud provider and rapsberry pi environments using terraform for helm and/or machine build depending on the environment being provisioned:
 
-With the lightweight nature of k3s, multiple installs of k3s environments on both cloud providers and bare metal will be provided.
+```
+deploy-k3s.yml
+```
 
-While these can support production loads, the installs that will be listed in this repository will be geared towards test and Edge cases.
+### k3s on AWS
 
-More about k3s can be found on Rancher's official site:
+To deploy a k3s cluster on AWS, run the k3s deployment playbook as follows:
 
-https://rancher.com/docs/k3s/latest/en/
+```
+ansible-playbook ./environments/kubernetes/deploy-k3s.yml --vault-id harbor@prompt --vault-id k3s@prompt --vault-id k3s-aws@prompt -e "build=aws user=ubuntu cluster_type=k3s"
+```
 
-## MetalLB
+### k3s on Pi
 
-MetalLB provides a network load balancer option for clusters that do not have this option natively. While many cloud providers provide API connections with Kubernetes to assign the Service object type of "LoadBalancer", this type is not native to bare metal implementations. If a LoadBalancer type cannot be configured natively, this restricts the implementation of Ingress routers for serving applications.
+To deploy a k3s cluster on a Raspberry Pi, run the k3s deployment playbook as follows:
 
-In this repository, MetalLB will be primarily used in the k3s-raspberrypi builds as the cloud provider builds will provide this functionality.
+```
+ansible-playbook -i ./environments/kubernetes/inventory/pi/inventory /environments/kubernetes/deploy-k3s.yml --vault-id pi@prompt --vault-id harbor@prompt --vault-id k3s@prompt -e "build=pi user=pi cluster_type=k3s"
+```
 
-More information about MetalLB can be found here
+## Kops
 
-https://metallb.universe.tf/concepts/
+The following Ansible playbook will deploy a full Kubernetes deployment using Kops on any cloud provider using terraform for helm and for machine level infrastructure builds depending on the environment being provisioned:
 
-## Contour
+```
+deploy-kops-cluster.yml
+```
 
-Contour provides Kubernetes clusters an Envoy based Ingress controller that provides HTTP proxies and Custom Resource Definitions that make it easier to deploy applications to the web. It also supports dynamic configuration of updates that allow configuration changes without restarting the load balancer or the pods associated with it. This makes it easier to perform blue-green deployments of applications.
+### Kops on AWS
 
-Contour will be used as the default Ingress controller in all the builds within this directory.
+To deploy a kops cluster on AWS, run the Kops deployment playbook as follows:
 
-More information about Contour can be found here:
-
-https://projectcontour.io/
-
-## Rook/Ceph
-
-Rook and Ceph is slowly become the defacto standard for implementing a distributed storage system on Kubernetes.
-
-Ceph provides the storage type and distribution offers while Rook manages the placement and allocation of the storage.
-
-Rook has other storage plugins, but Ceph tends to be the most common as it is durable, customizable, and easy to use.
-
-This will be used as the storage standard on all builds in this directory.
-
-More information on Rook can be found here:
-
-https://rook.io/docs/rook/v1.2/
-
-More information on Ceph can be found here:
-
-https://ceph.io/
-
-## Other Links
-
-Outside the links provided, the following were also used to help in the setup of the Kubernetes deployments in this directory:
-
-https://www.definit.co.uk/2019/08/lab-guide-kubernetes-load-balancer-and-ingress-with-metallb-and-contour/
-
-https://rancher.com/docs/k3s/latest/en/quick-start/
-
-https://docs.ansible.com/
-
-https://www.terraform.io/docs/index.html
-
-https://medium.com/@fdeantoni/running-rook-with-k3s-5e2c79159eaf
-
-https://blog.raveland.org/post/raspian_ceph_en/
+```
+ansible-playbook -i /environments/kubernetes/deploy-kops-cluster.yml -e "build=aws cluster_type=kops"
+```

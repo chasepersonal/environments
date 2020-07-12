@@ -1,0 +1,62 @@
+- name: Check if terraform build has already been initialized
+  stat:
+    path: $HOME/terraform/.terraform
+  register: terraform_init_path
+
+- name: Check if terraform workspace has been created
+  shell: terraform workspace list
+  register: terraform_workspaces
+  when: terraform_init_path.stat.exists == True
+
+- name: Create terraform workspace if it doesn't exist
+  shell: terraform workspace new {{ workspace }}
+  when:
+    - terraform_workspaces is defined
+    - terraform_workspaces.stdout.count == 1
+    - terraform_init_path.stat.exists == True
+
+- name: Check if a terraform build has already been run
+  shell: "terraform workspace select {{ workspace }} && terraform output"
+  register: terraform_output_pre_status
+  args:
+    chdir: $HOME/terraform
+  ignore_errors: yes
+  when: 
+    - terraform_init_path.stat.exists == True
+    - terraform_workspaces.stdout is defined
+  
+- name: Execute the terraform build - New Build
+  terraform:
+    project_path: $HOME/terraform/
+    state: present
+    workspace: "{{ workspace }}"
+    force_init: yes
+  register: terraform_build
+  when: terraform_init_path.stat.exists == False
+
+- name: Execute the terraform build - ReBuild
+  terraform:
+    project_path: $HOME/terraform/
+    state: present
+    workspace: "{{ workspace }}"
+  register: terraform_build
+  when: 
+    - terraform_output_pre_status.stderr is defined
+    - terraform_init_path.stat.exists == True
+
+- name: Show Terraform build outputs
+  block:
+    - debug:
+        var: terraform_build.outputs.master_ip_addr.value
+    - debug:
+        var: terraform_build.outputs.worker_ip_addr.value
+  
+
+- name: Display message if Terraform Build exists
+  debug:
+    msg: "{{ bucket }} already exists"
+  when:
+    - terraform_output_pre_status.stdout is defined
+    - terraform_init_path.stat.exists == True
+
+

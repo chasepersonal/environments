@@ -1,0 +1,4 @@
+region: us-east-2
+user: core
+build: aws
+deployment_list: ['cert-manager', 'contour', 'ceph', 'harbor']

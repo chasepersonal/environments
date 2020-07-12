@@ -1,0 +1,5 @@
+- name: Import helm build steps
+  import_tasks: helm-main.yml
+  vars:
+    package: metallb
+    values_file: metallb

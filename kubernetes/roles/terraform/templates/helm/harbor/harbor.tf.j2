@@ -1,0 +1,30 @@
+provider "helm" {
+  version        = "~> 1.0"
+}
+
+{% if build == 'aws' or build == 'pi' %}
+terraform {
+  backend "s3" {
+    bucket                = "{{ bucket }}"
+    key                   = "terraform/terraform.tfstate"
+    region                = "{{ region }}"
+    workspace_key_prefix  = "helm-harbor"
+  }
+}
+{% endif %}
+
+data "helm_repository" "harbor_repo" {
+  name = "harbor"
+  url  = "https://helm.goharbor.io"
+}
+
+resource "helm_release" "harbor" {
+  name  = "harbor"
+  chart = "harbor/harbor"
+  namespace = "harbor"
+
+  values = [
+    "${file("./values/harbor/values.yaml")}"
+  ]
+
+}

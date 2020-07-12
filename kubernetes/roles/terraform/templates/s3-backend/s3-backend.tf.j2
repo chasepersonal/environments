@@ -1,0 +1,8 @@
+terraform {
+  backend "s3" {
+    bucket                = "{{ bucket }}"
+    key                   = "terraform/terraform.tfstate"
+    region                = "us-east-2"
+    workspace_key_prefix  = "k3s-{{ build }}"
+  }
+}

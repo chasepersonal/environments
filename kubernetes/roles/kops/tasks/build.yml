@@ -1,0 +1,19 @@
+- name: AWS - Set build metadata
+  block:
+    - name: Set image to be used
+      set_fact:
+        image: 125523088429/fedora-coreos-31.20200223.3.0-hvm
+    - name: Set networking
+      set_fact:
+        networking: calico
+  when: build == 'aws'
+
+- name: Check if kops ssh key pair exists
+  stat:
+    path: ~/.ssh/kops
+  register: ssh_keypair_status
+
+- name: Generate ssh key pair for kops if it doesn't exist
+  openssh_keypair:
+    path: ~/.ssh/kops
+  when: ssh_keypair_status.stat.exists == False

@@ -1,0 +1,112 @@
+- name: Import steps for terraform state bucket configuration
+  import_tasks: bucket-config.yml
+
+- name: Set terraform build folder
+  set_fact:
+    terraform_build_folder: "files/k3s-{{ build }}/"
+
+- name: Check if k3s ssh key pair exists
+  stat:
+    path: "~/.ssh/k3s-{{ build }}"
+  register: ssh_keypair_status
+
+- name: Generate ssh key pair for k3s if it doesn't exist
+  block:
+    - name: Create SSH folder
+      file:
+        path: ~/.ssh
+        state: directory
+    - name: Generate ssh keypair
+      openssh_keypair:
+        path: "~/.ssh/k3s_{{ build }}"
+  when: ssh_keypair_status.stat.exists == False
+
+- name: Import terraform pre steps
+  import_tasks: pre.yml
+
+- name: Copy over the s3 backend configuration file
+  template:
+    src: templates/s3-backend/s3-backend.tf.j2
+    dest: $HOME/terraform/s3-backend.tf
+  vars:
+    workspace: "k3s-{{ build }}-cluster"
+
+- name: Move terraform files to main folder
+  copy:
+    src: "{{ terraform_build_folder }}"
+    dest: $HOME/terraform
+
+- name: Import main terraform steps
+  include_tasks: build.yml
+  vars:
+    tf_plan_name: "k3s-{{ build }}-cluster"
+    workspace: "k3s-{{ build }}-cluster"
+
+- name: Get machine ip's - terraform Shell
+  block:
+    - name: Select the appropriate terraform workspace
+      shell: terraform workspace select {{ workspace }}
+      args:
+        chdir: $HOME/terraform
+      vars:
+        workspace: "k3s-{{ build }}-cluster"
+    - name: Get master ip's from terraform Shell
+      shell: terraform output master_ip_addr
+      register: master_ips_output
+      args:
+        chdir: $HOME/terraform
+    - name: Convert master ip's output to more readable fact
+      set_fact:
+        master_ips: "{{ master_ips_output.stdout_lines }}"
+    - name: Get worker ip's from terraform Shell
+      shell: terraform output worker_ip_addr
+      register: worker_ips_output
+      args:
+        chdir: $HOME/terraform
+    - name: Convert master ip's output to more readable fact
+      set_fact:
+        worker_ips: "{{ worker_ips_output.stdout_lines }}"
+  when: terraform_build.outputs is not defined
+
+- name: Get machine ip's - Ansible terraform output
+  block:
+    - name: Get master ip's from Ansible Terraform output
+      set_fact:
+        master_ips: "{{ terraform_build.outputs.master_ip_addr.value }}"
+    - name: Get worker ip's from Ansible Terraform output
+      set_fact:
+        worker_ips: "{{ terraform_build.outputs.master_ip_addr.value }}"
+  when: terraform_build.outputs is defined
+
+- name: Add master ips to in memory inventory
+  add_host:
+    hostname: "{{ item }}"
+    groups: masters
+  loop: "{{ master_ips }}"
+
+- name: Add worker ips to in memory inventory
+  add_host:
+    hostname: "{{ item }}"
+    groups: workers
+  loop: "{{ worker_ips }}"
+
+- name: Refresh inventory with the new hosts
+  meta: refresh_inventory
+
+- name: Show new hosts
+  block:
+    - name: Show new masters
+      debug:
+        msg: "{{ groups['masters'] }}"
+      failed_when:
+        - groups['masters'] is not defined
+        - groups['masters'] == "" 
+    - name: Show new workers
+      debug:
+        msg: "{{ groups['workers'] }}"
+      failed_when:
+        - groups['workers'] is not defined
+        - groups['workers'] == ""
+    
+- name: Import post steps for terraform
+  import_tasks: post.yml

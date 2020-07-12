@@ -1,0 +1,3 @@
+ingressShim:
+  defaultIssuerName: "cf-le-prod"
+  defaultIssuerKind: "ClusterIssuer"

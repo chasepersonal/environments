@@ -1,0 +1,45 @@
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Deploy Terraform infra
+      import_role:
+        name: ../roles/terraform
+      when: build != 'pi'
+      
+- hosts: masters
+  remote_user: "{{ user }}"
+  become: yes
+  tasks:
+
+    - name: Import master initialization steps
+      import_role:
+        name: ../roles/k3s
+        tasks_from: master-init
+
+- hosts: workers
+  serial: 1
+  remote_user: "{{ user }}"
+  become: yes
+  vars:
+    m_token: "{{ hostvars['MasterCreds']['m_token'] }}"
+    m_ip: "{{ hostvars['MasterCreds']['m_ip'] }}"
+  tasks:
+
+    - name: Import worker initialization steps
+      import_role:
+        name: ../roles/k3s
+        tasks_from: worker-init
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Copy kubeconfig from master to host
+      fetch:
+        src: /var/lib/rancher/k3s/agent/kubeconfig.yaml
+        dest: ~/.kube/config
+      delegate_to: "{{ groups['master'] | random }}"
+  
+    - name: Import master post install steps
+      import_role:
+        name: ../roles/k3s
+        tasks_from: master-post

@@ -1,0 +1,8 @@
+---
+dependencies:
+  role: helm
+  vars:
+    helm_chart_name: argocd
+    helm_repo_url: https://argoproj.github.io/argo-helm
+    helm_repo_name: argo/argo-cd
+    helm_namespace: argo

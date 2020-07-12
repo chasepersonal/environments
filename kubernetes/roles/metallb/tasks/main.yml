@@ -1,0 +1,3 @@
+- name: Confirm MetalLB was installed
+  shell: kubectl get all --all-namespaces | grep metallb
+  register: metallb_deployment

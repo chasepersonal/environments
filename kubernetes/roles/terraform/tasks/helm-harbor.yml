@@ -1,0 +1,5 @@
+- name: Import Helm tasks
+  import_tasks: helm-main.yml
+  vars:
+    package: harbor
+    values_file: harbor
