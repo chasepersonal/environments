@@ -1,9 +1,15 @@
 - name: Set up private key for Ansible configuration
-  set_fact:
-    private_key: "{{ cluster_type }}-{{ build }}"
+  set_fact:                                      
+    private_key: "{{ cluster_type }}-{{ build }}"                                    
+                                                  
+- name: Make sure Ansible directory exists in home directory
+  file:                                         
+    path: $HOME/ansible-config                         
+    state: directory 
+    mode: '700'                          
 
 - name: Set up Ansible configuration on the host
   template:
     src: templates/ansible.cfg.j2
-    dest: /etc/ansible.cfg
-  become: yes
+    dest: $HOME/ansible-config/ansible.cfg
+    mode: '700'

@@ -86,7 +86,7 @@ resource "aws_security_group" "k3s_worker_sg" {
 
 /* Cluster security group */
 resource "aws_security_group" "k3s_master_sg" {
-  name        = "k3s_mater_sg"
+  name        = "k3s_master_sg"
   description = "k3s security group tailored to all nodes in the cluster"
   vpc_id      = module.k3s_vpc.vpc_id
 
@@ -149,6 +149,12 @@ resource "aws_instance" "k3s_master" {
   security_groups   = [aws_security_group.k3s_master_sg.id]
   key_name          = aws_key_pair.k3s_cluster_kp.key_name
   source_dest_check = true
+  ephemeral_block_device = [
+    {
+        "DeviceName": "/dev/sdb",
+        "VirtualName": "ephemeral0"
+    }
+  ]
   tags = {
     Name = "k3s-aws-m-${count.index}"
   }
@@ -170,6 +176,12 @@ resource "aws_instance" "k3s_worker" {
   security_groups   = [aws_security_group.k3s_worker_sg.id]
   key_name          = aws_key_pair.k3s_cluster_kp.key_name
   source_dest_check = true
+  ephemeral_block_device = [
+    {
+        "DeviceName": "/dev/sdb",
+        "VirtualName": "ephemeral0"
+    }
+  ]
   tags = {
     Name = "k3s-aws-w-${count.index}"
   }
